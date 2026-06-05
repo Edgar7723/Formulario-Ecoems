@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepaExamen - Formulario Secundaria</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const SUBJECTS = [
+            "HISTORIA UNIVERSAL",
+            "HISTORIA DE MÉXICO",
+            "FÍSICA",
+            "QUIMICA",
+            "GEOGRAFÍA",
+            "BIOLOGÍA",
+            "MATEMÁTICAS",
+            "ESPAÑOL"
+        ];
+
+        const MathFormula = ({ label, children }) => (
+            <div className="flex flex-col items-center bg-white border border-gray-200 rounded-lg p-3 shadow-sm min-w-[120px]">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{label}</span>
+                <div className="font-serif text-xl text-gray-800 flex items-center">
+                    {children}
+                </div>
+            </div>
+        );
+
+        const Fraction = ({ top, bottom }) => (
+            <div className="flex flex-col items-center mx-1">
+                <span className="border-b border-gray-800 px-1 leading-none pb-1">{top}</span>
+                <span className="leading-none pt-1">{bottom}</span>
+            </div>
+        );
+
+        const EventCard = ({ title, period, desc, chars, causes, consequences, timeline }) => (
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col h-full hover:shadow-md transition-shadow">
+                <h3 className="font-bold text-lg text-indigo-900 mb-1 leading-tight">{title}</h3>
+                {period && <span className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded font-bold tracking-wide mb-3">{period}</span>}
+                <p className="text-sm text-gray-700 mb-4 leading-relaxed">{desc}</p>
+                
+                {/* CRONOLOGÍA */}
+                {timeline && timeline.length > 0 && (
+                    <div className="mb-4">
+                        <h4 className="font-bold text-xs text-gray-500 uppercase mb-2">⏱ Cronología Clave</h4>
+                        <ul className="border-l-2 border-indigo-200 ml-2 space-y-2">
+                            {timeline.map((t, i) => (
+                                <li key={i} className="pl-3 relative text-sm">
+                                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-indigo-400"></span>
+                                    <strong className="text-gray-800">{t.year}:</strong> <span className="text-gray-600">{t.event}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                
+                {/* CAUSAS, PERSONAJES Y CONSECUENCIAS */}
+                <div className="mt-auto space-y-2 text-xs">
+                    {causes && (
+                        <div className="bg-orange-50 p-2.5 rounded-lg border-l-4 border-orange-400">
+                            <span className="font-bold text-orange-800 block mb-0.5">🔙 Causas (Origen):</span> 
+                            <span className="text-orange-900">{causes}</span>
+                        </div>
+                    )}
+                    {chars && (
+                        <div className="bg-blue-50 p-2.5 rounded-lg border-l-4 border-blue-400">
+                            <span className="font-bold text-blue-800 block mb-0.5">👤 Personajes Importantes:</span> 
+                            <span className="text-blue-900">{chars}</span>
+                        </div>
+                    )}
+                    {consequences && (
+                        <div className="bg-emerald-50 p-2.5 rounded-lg border-l-4 border-emerald-400">
+                            <span className="font-bold text-emerald-800 block mb-0.5">🔜 Consecuencias:</span> 
+                            <span className="text-emerald-900">{consequences}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        const HistoryBlock = ({ title, colorClass, imageUrl, imageAlt, children }) => {
+            const [imgSrc, setImgSrc] = useState(imageUrl);
+            return (
+                <div className="mb-10 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    {/* BANNER DE IMAGEN (Responsivo) */}
+                    <div className="h-32 md:h-48 w-full relative bg-gray-800">
+                        <img 
+                            src={imgSrc} 
+                            alt={imageAlt} 
+                            className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+                            onError={() => setImgSrc('https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=1200&q=80')}
+                        />
+                        <div className={`absolute inset-0 ${colorClass} mix-blend-color opacity-50`}></div>
+                        <div className="absolute inset-0 flex items-center px-6 md:px-8">
+                            <h2 className="text-xl md:text-3xl font-black text-white drop-shadow-lg">{title}</h2>
+                        </div>
+                    </div>
+                    <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 bg-gray-50/50">
+                        {children}
+                    </div>
+                </div>
+            );
+        };
+// --- VISTA DE MATEMÁTICAS ---
+        const MatematicasView = () => (
+             <div className="animate-fade-in space-y-8">
+                 <div className="mb-8 text-center md:text-left">
+                     <h2 className="text-2xl md:text-3xl font-black text-gray-800">Matemáticas</h2>
+                     <p className="text-gray-500 mt-1">Aritmética, Álgebra, Estadística y Geometría.</p>
+                 </div>
+                 
+                 {/* BLOQUE 1 Y 2: NÚMEROS Y ÁLGEBRA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-indigo-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">1 y 2. Números y Álgebra</h2>
+                     </div>
+                     <div className="p-4 md:p-8 bg-slate-50 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         
+                         {/* Jerarquía en Pirámide y Porcentajes */}
+                         <div className="bg-white p-5 rounded-xl border border-indigo-100 shadow-sm flex flex-col justify-center items-center">
+                             <h3 className="font-black text-indigo-800 mb-4 border-b pb-2 w-full text-center">Jerarquía de Operaciones</h3>
+                             
+                             {/* Pirámide CSS */}
+                             <div className="flex flex-col items-center space-y-1 mb-5 w-full drop-shadow-sm">
+                                 <div className="w-16 bg-indigo-600 text-white text-center text-xs py-1 rounded-t-lg font-bold z-40">( ) [ ]</div>
+                                 <div className="w-24 bg-indigo-500 text-white text-center text-xs py-1 font-bold z-30">x² , √</div>
+                                 <div className="w-32 bg-indigo-400 text-white text-center text-xs py-1 font-bold z-20">× , ÷</div>
+                                 <div className="w-40 bg-indigo-300 text-indigo-900 text-center text-xs py-1 rounded-b-lg font-bold z-10">+ , -</div>
+                             </div>
+
+                             <div className="bg-indigo-50 p-3 rounded-lg flex items-center justify-between w-full mt-auto">
+                                 <span className="font-bold text-indigo-900 text-sm">Regla de 3 (%):</span>
+                                 <div className="flex flex-col items-center font-mono text-indigo-800 font-bold">
+                                     <span className="border-b border-indigo-800 px-2">x% · Total</span>
+                                     <span>100</span>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Productos Notables */}
+                         <div className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm flex flex-col justify-center">
+                             <h3 className="font-black text-blue-800 mb-3 border-b pb-2 text-center">Productos Notables</h3>
+                             <div className="space-y-4 text-center font-serif text-lg text-gray-800 mt-2">
+                                 <div>
+                                     <span className="block text-xs font-sans text-gray-500 uppercase tracking-widest font-bold mb-1">Ley Distributiva</span>
+                                     <span className="bg-blue-50 px-3 py-1 rounded">a(x+y) = ax + ay</span>
+                                 </div>
+                                 <div>
+                                     <span className="block text-xs font-sans text-gray-500 uppercase tracking-widest font-bold mb-1">Binomio al Cuadrado</span>
+                                     <span className="bg-blue-50 px-3 py-1 rounded">(a+b)² = a² + 2ab + b²</span>
+                                 </div>
+                                 <div>
+                                     <span className="block text-xs font-sans text-gray-500 uppercase tracking-widest font-bold mb-1">Diferencia de Cuadrados</span>
+                                     <span className="bg-blue-50 px-3 py-1 rounded">a² - b² = (a+b)(a-b)</span>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Fórmula General (Chicharronera) */}
+                         <div className="bg-white p-5 rounded-xl border-2 border-amber-200 shadow-sm flex flex-col justify-center lg:col-span-1 md:col-span-2">
+                             <h3 className="font-black text-amber-800 mb-2 border-b pb-2 text-center">Ecuación de 2do Grado</h3>
+                             <p className="text-center text-xs text-gray-500 mb-4 font-mono">ax² + bx + c = 0</p>
+                             
+                             <div className="flex justify-center w-full overflow-x-auto py-2">
+                                 <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex items-center font-serif text-xl sm:text-2xl text-gray-900 whitespace-nowrap">
+                                     <span className="mr-3">x =</span>
+                                     <div className="flex flex-col items-center">
+                                         <div className="border-b-2 border-gray-900 pb-1 mb-1 flex items-center">
+                                             <span>-b ±</span>
+                                             <span className="ml-2 flex items-start">
+                                                 <span className="text-2xl md:text-3xl leading-none mt-[-2px]">√</span>
+                                                 <span className="border-t-2 border-gray-900 pt-1 block ml-[-2px] px-1">b² - 4ac</span>
+                                             </span>
+                                         </div>
+                                         <span className="pt-1">2a</span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 3: ESTADÍSTICA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-emerald-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">3. Manejo de la Información Estadística</h2>
+                     </div>
+                     <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                         
+                         <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
+                             <h3 className="font-black text-emerald-800 mb-4">Medidas de Tendencia Central</h3>
+                             <div className="space-y-4">
+                                 <div className="flex items-start">
+                                     <div className="bg-white p-2 rounded shadow-sm mr-3 font-bold text-emerald-600 text-sm">Media</div>
+                                     <p className="text-sm text-gray-700 mt-1">Sumar todos los datos y dividir entre el número total de datos (Promedio).</p>
+                                 </div>
+                                 <div className="flex items-start">
+                                     <div className="bg-white p-2 rounded shadow-sm mr-3 font-bold text-emerald-600 text-sm">Moda</div>
+                                     <p className="text-sm text-gray-700 mt-1">El dato que más se repite.</p>
+                                 </div>
+                                 <div className="flex items-start">
+                                     <div className="bg-white p-2 rounded shadow-sm mr-3 font-bold text-emerald-600 text-sm">Mediana</div>
+                                     <p className="text-sm text-gray-700 mt-1">El dato que está en el medio (si hay dos, se saca su promedio).</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                         <div className="bg-teal-50 p-5 rounded-xl border border-teal-100 flex flex-col justify-center items-center text-center">
+                             <h3 className="font-black text-teal-800 mb-4">Probabilidad y Frecuencia</h3>
+                             <p className="text-sm text-gray-700 mb-4"><b>Frecuencia absoluta:</b> Veces que se repite un evento.</p>
+                             
+                             <div className="flex items-center justify-center bg-white p-4 rounded-xl shadow-sm border border-teal-200">
+                                 <span className="font-bold text-teal-900 mr-3">Probabilidad =</span>
+                                 <div className="flex flex-col items-center font-bold text-teal-700 text-sm md:text-base">
+                                     <span className="border-b-2 border-teal-700 px-2 pb-1">Eventos Favorables</span>
+                                     <span className="pt-1">Total de Eventos Posibles</span>
+                                 </div>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 4: GEOMETRÍA Y TRIGONOMETRÍA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-rose-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">4. Formas Geométricas y Semejanza</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         <div className="grid grid-cols-1 gap-8 mb-10 border-b border-gray-100 pb-10">
+                             
+                             {/* Ángulos entre paralelas */}
+                             <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100">
+                                 <h3 className="font-black text-rose-800 mb-4 text-center">Ángulos entre Paralelas</h3>
+                                 <div className="flex flex-col md:flex-row items-center gap-6">
+                                     <div className="w-full md:w-1/2 bg-white rounded-xl shadow-inner p-4 border border-gray-200">
+                                         <svg viewBox="0 0 200 200" className="w-full max-w-[240px] mx-auto">
+                                             {/* Líneas horizontales */}
+                                             <line x1="20" y1="60" x2="180" y2="60" stroke="#334155" strokeWidth="3" />
+                                             <line x1="20" y1="140" x2="180" y2="140" stroke="#334155" strokeWidth="3" />
+                                             {/* Transversal (cruza exactamente en (80,60) y (120,140)) */}
+                                             <line x1="50" y1="0" x2="150" y2="200" stroke="#334155" strokeWidth="3" />
+                                             
+                                             {/* Etiquetas milimétricamente centradas en cada cuadrante */}
+                                             {/* Intersección Superior (80,60) */}
+                                             <text x="50" y="50" fill="#ef4444" fontSize="16" fontWeight="bold" textAnchor="middle">A</text>
+                                             <text x="110" y="50" fill="#3b82f6" fontSize="16" fontWeight="bold" textAnchor="middle">B</text>
+                                             <text x="50" y="90" fill="#3b82f6" fontSize="16" fontWeight="bold" textAnchor="middle">C</text>
+                                             <text x="110" y="90" fill="#ef4444" fontSize="16" fontWeight="bold" textAnchor="middle">D</text>
+
+                                             {/* Intersección Inferior (120,140) */}
+                                             <text x="90" y="130" fill="#ef4444" fontSize="16" fontWeight="bold" textAnchor="middle">E</text>
+                                             <text x="150" y="130" fill="#3b82f6" fontSize="16" fontWeight="bold" textAnchor="middle">F</text>
+                                             <text x="90" y="170" fill="#3b82f6" fontSize="16" fontWeight="bold" textAnchor="middle">G</text>
+                                             <text x="150" y="170" fill="#ef4444" fontSize="16" fontWeight="bold" textAnchor="middle">H</text>
+                                         </svg>
+                                     </div>
+                                     <div className="w-full md:w-1/2 text-sm text-gray-700 bg-white p-5 rounded-xl shadow-sm">
+                                         <p className="mb-3"><b>Opuestos por el vértice:</b><br/> <span className="text-red-600 font-bold bg-red-50 px-1 rounded">A = D</span>, <span className="text-blue-600 font-bold bg-blue-50 px-1 rounded">C = B</span>, <span className="text-red-600 font-bold bg-red-50 px-1 rounded">E = H</span>, <span className="text-blue-600 font-bold bg-blue-50 px-1 rounded">G = F</span></p>
+                                         <p className="mb-3"><b>Alternos (internos y externos):</b><br/> <span className="text-red-600 font-bold bg-red-50 px-1 rounded">A = H</span>, <span className="text-blue-600 font-bold bg-blue-50 px-1 rounded">G = B</span></p>
+                                         <p className="border-t pt-2"><b>Suman 180° (Suplementarios):</b><br/> A+B = 180°, C+D = 180°, G+H = 180°</p>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             {/* Triángulo, Pitágoras, Desigualdades y Suma de Ángulos */}
+                             <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                                 <h3 className="font-black text-purple-800 mb-6 text-center">Trigonometría y Propiedades del Triángulo</h3>
+                                 <div className="flex flex-col md:flex-row items-center gap-8">
+                                     
+                                     {/* Dibujo del Triángulo Corregido */}
+                                     <div className="w-full md:w-1/3 bg-white rounded-xl shadow-inner p-4 border border-gray-200">
+                                         <svg viewBox="0 0 220 220" className="w-full max-w-[220px] mx-auto">
+                                             {/* Triángulo Base */}
+                                             <polygon points="50,170 170,170 170,50" fill="#f3e8ff" stroke="#7e22ce" strokeWidth="3" />
+                                             {/* Ángulo recto */}
+                                             <rect x="150" y="150" width="20" height="20" fill="none" stroke="#ef4444" strokeWidth="2" />
+                                             {/* Ángulo de referencia θ */}
+                                             <path d="M 85 170 A 35 35 0 0 0 75 145" fill="none" stroke="#3b82f6" strokeWidth="2"/>
+                                             <text x="92" y="162" fill="#3b82f6" fontSize="16" fontWeight="bold">θ</text>
+                                             
+                                             {/* Etiquetas Perfectamente Alineadas */}
+                                             <text x="110" y="195" fill="#1f2937" fontSize="14" fontWeight="bold" textAnchor="middle">Cat. Ady. (a)</text>
+                                             <text x="185" y="110" fill="#1f2937" fontSize="14" fontWeight="bold" textAnchor="middle" transform="rotate(-90 185,110)">Cat. Op. (b)</text>
+                                             <text x="95" y="95" fill="#1f2937" fontSize="14" fontWeight="bold" textAnchor="middle" transform="rotate(-45 95,95)">Hipotenusa (c)</text>
+                                         </svg>
+                                     </div>
+
+                                     {/* Fórmulas y Teoremas */}
+                                     <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                                         
+                                         {/* Columna 1 */}
+                                         <div className="space-y-4">
+                                             <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 text-center">
+                                                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1">Teorema de Pitágoras</span>
+                                                 <span className="font-serif text-xl font-bold text-purple-900">a² + b² = c²</span>
+                                             </div>
+                                             
+                                             <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-500">
+                                                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1 text-center">Suma de Ángulos</span>
+                                                 <p className="text-xs leading-tight text-center text-gray-700 mt-1">
+                                                     La suma de los ángulos internos de un triángulo <b>siempre es 180°</b>.
+                                                 </p>
+                                             </div>
+                                         </div>
+
+                                         {/* Columna 2 */}
+                                         <div className="space-y-4">
+                                             <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                                                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-1 text-center">T. de Desigualdades</span>
+                                                 <p className="text-xs leading-tight text-gray-700 text-center mt-1">
+                                                     La suma de las medidas de dos lados cualesquiera es <b>siempre mayor</b> que la medida del lado sobrante.
+                                                 </p>
+                                             </div>
+
+                                             <div className="bg-white p-3 rounded-xl shadow-sm border-l-4 border-blue-500 text-xs font-bold space-y-2">
+                                                 <span className="block text-[11px] uppercase font-bold text-gray-400 mb-2 text-center">Razones Trigonométricas</span>
+                                                 <div className="flex justify-between items-center bg-blue-50 p-1.5 rounded"><span className="text-blue-700 text-sm">Seno</span> <span className="text-[11px] text-gray-600">Opuesto / Hipotenusa</span></div>
+                                                 <div className="flex justify-between items-center bg-blue-50 p-1.5 rounded"><span className="text-blue-700 text-sm">Coseno</span> <span className="text-[11px] text-gray-600">Adyacente / Hipotenusa</span></div>
+                                                 <div className="flex justify-between items-center bg-blue-50 p-1.5 rounded"><span className="text-blue-700 text-sm">Tangente</span> <span className="text-[11px] text-gray-600">Opuesto / Adyacente</span></div>
+                                             </div>
+                                         </div>
+
+                                     </div>
+                                 </div>
+                             </div>
+
+                         </div>
+
+                         {/* Fórmulas de Áreas, Perímetros y Volúmenes */}
+                         <h3 className="font-black text-rose-900 mb-6 text-center text-xl">Áreas, Perímetros y Volúmenes (π = 3.1416)</h3>
+                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                             
+                             <div className="bg-white border-2 border-sky-100 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-sky-500" fill="currentColor"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-sky-800 tracking-wider">Cuadrilátero</h4>
+                                 <div className="mt-3 text-left bg-sky-50 p-2 rounded-lg">
+                                    <p className="text-xs text-gray-700"><b className="text-sky-700">Área:</b> b × h</p>
+                                    <p className="text-xs text-gray-700"><b className="text-sky-700">Perím:</b> (b + h) × 2</p>
+                                 </div>
+                             </div>
+
+                             <div className="bg-white border-2 border-green-100 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-green-500" fill="currentColor"><polygon points="12,3 22,20 2,20"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-green-800 tracking-wider">Triángulo</h4>
+                                 <div className="mt-3 text-left bg-green-50 p-2 rounded-lg">
+                                    <p className="text-xs text-gray-700 flex items-center gap-1"><b className="text-green-700">Área:</b> <span className="flex flex-col items-center leading-none text-[10px]"><span className="border-b border-gray-500 px-1">b × h</span><span>2</span></span></p>
+                                    <p className="text-xs text-gray-700 mt-1"><b className="text-green-700">Perím:</b> a + b + c</p>
+                                 </div>
+                             </div>
+
+                             <div className="bg-white border-2 border-purple-100 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-purple-500" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-purple-800 tracking-wider">Círculo</h4>
+                                 <div className="mt-3 text-left bg-purple-50 p-2 rounded-lg">
+                                    <p className="text-xs text-gray-700"><b className="text-purple-700">Área:</b> π × r²</p>
+                                    <p className="text-xs text-gray-700"><b className="text-purple-700">Perím:</b> π × D</p>
+                                 </div>
+                             </div>
+
+                             <div className="bg-white border-2 border-orange-100 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-orange-500" fill="currentColor"><polygon points="12,2 22,9 18,20 6,20 2,9"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-orange-800 tracking-wider">Polígono Reg.</h4>
+                                 <div className="mt-3 text-left bg-orange-50 p-2 rounded-lg">
+                                    <p className="text-xs text-gray-700 flex items-center gap-1"><b className="text-orange-700">Área:</b> <span className="flex flex-col items-center leading-none text-[10px]"><span className="border-b border-gray-500 px-1">P × a</span><span>2</span></span></p>
+                                    <p className="text-xs text-gray-700 mt-1"><b className="text-orange-700">Perím:</b> L × n</p>
+                                 </div>
+                             </div>
+
+                             <div className="bg-white border-2 border-red-100 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-red-500" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-red-800 tracking-wider">Cubo</h4>
+                                 <div className="mt-3 text-left bg-red-50 p-2 rounded-lg">
+                                    <p className="text-xs text-gray-700"><b className="text-red-700">Vol:</b> (lado)³</p>
+                                 </div>
+                             </div>
+
+                             <div className="bg-teal-100 border-2 border-teal-200 p-4 rounded-2xl text-center shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                                 <svg viewBox="0 0 24 24" className="w-10 h-10 mx-auto mb-3 text-teal-600" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 5v14c0 1.66-4 3-9 3s-9-1.34-9-3V5"/></svg>
+                                 <h4 className="font-black text-[11px] uppercase text-teal-900 tracking-wider">Prisma / Cilindro</h4>
+                                 <div className="mt-3 text-left bg-white p-2 rounded-lg">
+                                    <p className="text-[11px] text-gray-700 leading-tight"><b className="text-teal-700">Vol:</b> (Área base) × largo</p>
+                                 </div>
+                             </div>
+
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        );
+// --- VISTA DE ESPAÑOL ---
+        const EspanolView = () => (
+             <div className="animate-fade-in space-y-8">
+                 <div className="mb-8 text-center md:text-left">
+                     <h2 className="text-2xl md:text-3xl font-black text-gray-800">Español</h2>
+                     <p className="text-gray-500 mt-1">Obtención de información, organización, gramática y tipos de texto.</p>
+                 </div>
+                 
+                 {/* BLOQUE 1: OBTENCIÓN Y ORGANIZACIÓN DE INFORMACIÓN */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-orange-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">1. Manejo y Organización de la Información</h2>
+                     </div>
+                     <div className="p-4 md:p-8 bg-orange-50 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                         
+                         {/* Ficha Bibliográfica Dibujada */}
+                         <div className="flex flex-col justify-center">
+                             <h3 className="font-black text-orange-900 mb-4 text-center">La Ficha Bibliográfica</h3>
+                             <p className="text-sm text-gray-700 mb-4 text-center">Sirve para conservar los datos propios de una obra consultada.</p>
+                             
+                             <div className="bg-white p-6 rounded shadow-md border-t-4 border-orange-400 w-full max-w-sm mx-auto relative font-serif transform rotate-1 hover:rotate-0 transition-transform">
+                                 {/* Líneas simuladas de la ficha */}
+                                 <div className="absolute inset-0 flex flex-col pointer-events-none opacity-20 mt-12">
+                                     <div className="flex-1 border-b border-blue-400"></div><div className="flex-1 border-b border-blue-400"></div>
+                                     <div className="flex-1 border-b border-blue-400"></div><div className="flex-1 border-b border-blue-400"></div>
+                                     <div className="flex-1 border-b border-blue-400"></div>
+                                 </div>
+                                 
+                                 <div className="relative z-10 text-sm leading-loose">
+                                     <p><span className="font-bold text-gray-500 font-sans text-xs uppercase">Autor:</span> <b>García Márquez, Gabriel.</b></p>
+                                     <p><span className="font-bold text-gray-500 font-sans text-xs uppercase">Título:</span> <i>Cien años de soledad.</i></p>
+                                     <p><span className="font-bold text-gray-500 font-sans text-xs uppercase">Lugar y Año:</span> Buenos Aires, 1967.</p>
+                                     <p><span className="font-bold text-gray-500 font-sans text-xs uppercase">Editorial:</span> Editorial Sudamericana.</p>
+                                     <p><span className="font-bold text-gray-500 font-sans text-xs uppercase">Páginas:</span> 471 pp.</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Recursos Gráficos y Párrafos */}
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div className="bg-white p-4 rounded-xl border border-orange-200 shadow-sm">
+                                 <h4 className="font-bold text-orange-800 text-sm mb-2 border-b pb-1">Organización del Texto</h4>
+                                 <ul className="text-xs text-gray-700 space-y-2">
+                                     <li>📝 <b>Tema/Subtema:</b> Desglose de lo general a lo particular.</li>
+                                     <li>⏱ <b>Cronológico:</b> Sucesión de tiempo (ej. historia, cuentos).</li>
+                                     <li>🧩 <b>Problema-Solución:</b> Se plantea un conflicto y luego cómo resolverlo.</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl border border-orange-200 shadow-sm">
+                                 <h4 className="font-bold text-orange-800 text-sm mb-2 border-b pb-1">Desarrollo de Párrafos</h4>
+                                 <ul className="text-xs text-gray-700 space-y-2">
+                                     <li>💡 <b>Ejemplos:</b> Ayudan a transmitir el mensaje.</li>
+                                     <li>🔁 <b>Repeticiones:</b> Dan énfasis a una palabra o idea.</li>
+                                     <li>🗣 <b>Paráfrasis:</b> Explicar con <i>palabras propias</i> el contenido de un texto original.</li>
+                                 </ul>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 2: COHESIÓN Y NEXOS (TABLA) */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-cyan-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">2. Coherencia, Cohesión y Nexos</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Concordancia */}
+                         <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6 text-sm text-center">
+                             <span className="font-black text-slate-700">Concordancia:</span> El sujeto y el predicado deben coincidir en <b>Género</b> (Masculino/Femenino) y <b>Número</b> (Singular/Plural).<br/>
+                             <span className="text-red-500 line-through mr-2">La UNAM es el mejor universidad.</span>
+                             <span className="text-emerald-600 font-bold">La UNAM es la mejor universidad.</span>
+                         </div>
+
+                         <h3 className="font-black text-cyan-800 mb-4 text-center">Tipos de Nexos (Los conectores del texto)</h3>
+                         <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                             <table className="w-full text-left text-sm">
+                                 <thead className="bg-cyan-50 text-cyan-900">
+                                     <tr>
+                                         <th className="p-3 font-bold">Función</th>
+                                         <th className="p-3 font-bold border-l border-cyan-100">Nexos / Expresiones</th>
+                                         <th className="p-3 font-bold border-l border-cyan-100">Ejemplo de uso</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-gray-100">
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Introducir ideas</td>
+                                         <td className="p-3 border-l text-cyan-700">además, por ejemplo, en primer lugar, finalmente</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"Es guapo, inteligente y <b>además</b> caballeroso."</td>
+                                     </tr>
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Sucesión (Tiempo)</td>
+                                         <td className="p-3 border-l text-cyan-700">luego, después, primero, antes</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"<b>Primero</b> invítame un café."</td>
+                                     </tr>
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Simultaneidad</td>
+                                         <td className="p-3 border-l text-cyan-700">mientras, al mismo tiempo, a la vez</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"Escribía <b>mientras</b> escuchaba música."</td>
+                                     </tr>
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Oposición / Concesión</td>
+                                         <td className="p-3 border-l text-cyan-700">pero, aunque, sin embargo, a pesar de</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"Me gustas, <b>pero</b> tengo novio."</td>
+                                     </tr>
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Causales</td>
+                                         <td className="p-3 border-l text-cyan-700">porque, debido a que, ya que</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"Practico box <b>porque</b> quiero defenderme."</td>
+                                     </tr>
+                                     <tr className="hover:bg-gray-50">
+                                         <td className="p-3 font-bold text-gray-700">Condicionales</td>
+                                         <td className="p-3 border-l text-cyan-700">si, siempre que, con tal de</td>
+                                         <td className="p-3 border-l text-gray-600 italic">"Saldremos <b>siempre que</b> no llueva."</td>
+                                     </tr>
+                                 </tbody>
+                             </table>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 3: PUNTUACIÓN Y ORACIONES */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-purple-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">3. Puntuación y Oraciones</h2>
+                     </div>
+                     <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                         
+                         {/* Signos */}
+                         <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-sm">
+                                 <span className="text-2xl font-black text-purple-600 mb-1 block">;</span>
+                                 <b className="text-purple-900">Punto y coma:</b> Separa enunciados relacionados o enumeraciones complejas que ya tienen comas.
+                             </div>
+                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-sm">
+                                 <span className="text-2xl font-black text-purple-600 mb-1 block">,</span>
+                                 <b className="text-purple-900">Coma:</b> Enumera elementos, aísla nombres (vocativos: "Juan, ven") y añade aclaraciones.
+                             </div>
+                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-sm">
+                                 <span className="text-2xl font-black text-purple-600 mb-1 block">" "</span>
+                                 <b className="text-purple-900">Comillas:</b> Para <i>citar</i> palabras exactas de otra persona o resaltar ironías.
+                             </div>
+                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-sm">
+                                 <span className="text-2xl font-black text-purple-600 mb-1 block">( )</span>
+                                 <b className="text-purple-900">Paréntesis:</b> Encierran aclaraciones, explicaciones o fechas exactas (ej. 1521).
+                             </div>
+                         </div>
+
+                         {/* Oraciones */}
+                         <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 text-white flex flex-col justify-center">
+                             <h3 className="font-bold text-purple-300 border-b border-slate-600 pb-2 mb-3">Oraciones</h3>
+                             <p className="text-xs mb-3"><b className="text-white">Principal:</b> Contiene la info central, se entiende por sí sola.</p>
+                             <p className="text-xs mb-4"><b className="text-gray-400">Secundaria:</b> Agrega información, depende de la principal.</p>
+                             <div className="bg-slate-700 p-3 rounded text-sm italic">
+                                 "<span className="text-white font-bold">Me voy a tatuar</span>, <span className="text-gray-400">aunque tú no quieras</span>."
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 4: TIEMPOS VERBALES Y TEXTOS */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-rose-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">4. Tiempos Verbales y Tipos de Textos</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Tiempos Verbales */}
+                         <h3 className="font-black text-rose-900 mb-4 text-center">Los Tiempos Verbales Clave</h3>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                             <div className="bg-rose-50 border border-rose-200 p-5 rounded-xl">
+                                 <h4 className="font-bold text-rose-800 text-lg mb-2">Copretérito</h4>
+                                 <p className="text-sm text-gray-700 mb-3">Terminaciones: <b className="bg-white px-2 py-0.5 rounded text-rose-600 shadow-sm">-aba, -ía</b></p>
+                                 <ul className="text-xs text-gray-600 space-y-2 list-disc pl-4">
+                                     <li>Acción que no se sabe cuándo terminó <i>(jugaba)</i>.</li>
+                                     <li>Acciones simultáneas en el pasado <i>(estudiaba mientras comía)</i>.</li>
+                                     <li><b>Describir fondo o personajes:</b> <i>"El cuarto estaba oscuro y ella tenía frío."</i></li>
+                                 </ul>
+                             </div>
+                             <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl">
+                                 <h4 className="font-bold text-amber-800 text-lg mb-2">Presente Simple</h4>
+                                 <ul className="text-xs text-gray-700 space-y-3">
+                                     <li><b className="text-amber-900">Habitual:</b> Acción de rutina. <i>"Canto en el baño."</i></li>
+                                     <li><b className="text-amber-900">Histórico:</b> Hecho pasado narrado en presente para darle vida. <i>"En 1939 inicia la Guerra."</i></li>
+                                     <li><b className="text-amber-900">Atemporal:</b> Verdades absolutas (ciencia). <i>"Dos más dos son cuatro."</i></li>
+                                 </ul>
+                             </div>
+                         </div>
+
+                         {/* Textos, Hechos, Opiniones, Publicidad */}
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                 <h4 className="font-bold text-slate-800 mb-2 border-b pb-1">Tipos de Textos</h4>
+                                 <p className="text-xs text-gray-600 mb-2"><b>Informativos:</b> Informan de forma objetiva (3ra persona).</p>
+                                 <p className="text-xs text-gray-600 mb-2"><b>Legales/Admin:</b> Leyes, contratos, notificaciones oficiales.</p>
+                                 <p className="text-xs text-gray-600"><b>Noticia vs Artículo:</b> La noticia relata el hecho puro; el artículo refleja el <i>punto de vista</i> del autor.</p>
+                             </div>
+                             
+                             <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 flex flex-col justify-center">
+                                 <h4 className="font-bold text-blue-800 mb-3 text-center">Hecho vs Opinión</h4>
+                                 <div className="space-y-2">
+                                     <div className="bg-white p-2 rounded text-xs border-l-4 border-blue-500">
+                                         <b>HECHO:</b> 100% demostrable. Lo que sucedió.<br/><span className="text-gray-500 italic">Ej. "Hoy llovió a las 3pm."</span>
+                                     </div>
+                                     <div className="bg-white p-2 rounded text-xs border-l-4 border-indigo-500">
+                                         <b>OPINIÓN:</b> Punto de vista o juicio.<br/><span className="text-gray-500 italic">Usa: "creo que, pienso, en mi opinión."</span>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-center flex flex-col justify-center">
+                                 <h4 className="font-bold text-emerald-800 mb-2">Publicidad vs Realidad</h4>
+                                 <p className="text-xs text-gray-600 mb-3">La publicidad <b>persuade</b> al consumidor exagerando cualidades o maquillando virtudes que no tienen (impacto en sociedad).</p>
+                                 <div className="flex justify-center gap-2 text-3xl">
+                                     🍔 ➔ 🌭
+                                     <div className="text-[10px] flex flex-col justify-center font-bold text-gray-400">
+                                         <span>Foto vs Real</span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+             </div>
+        );
+// --- VISTA DE QUÍMICA ---
+        const QuimicaView = () => (
+            <div className="animate-fade-in space-y-8">
+                <div className="mb-8">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-800">Química</h2>
+                    <p className="text-gray-500 mt-1">Características de los materiales, estructura atómica y reacciones químicas.</p>
+                </div>
+                
+                {/* BLOQUE 1: CARACTERÍSTICAS Y PROPIEDADES (CUADRO SINÓPTICO) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                    <div className="bg-indigo-600 px-6 py-4">
+                        <h2 className="text-lg font-bold text-white">1. Las características de los materiales</h2>
+                    </div>
+                    <div className="p-6 md:p-8 bg-slate-50">
+                        <p className="text-gray-500 mb-6 text-center italic">Cuadro Sinóptico: Propiedades y Clasificación de la Materia</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Cualitativas */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-indigo-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" className="w-12 h-12 mb-3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <h4 className="font-black text-indigo-800 mb-2">Cualitativas</h4>
+                                <p className="text-xs text-gray-600"><b>No se miden.</b> Se perciben con los sentidos (Color, sabor, olor, estado de agregación).</p>
+                            </div>
+
+                            {/* Intensivas */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-emerald-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" className="w-12 h-12 mb-3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+                                    <circle cx="12" cy="16" r="2" fill="#10b981" />
+                                </svg>
+                                <h4 className="font-black text-emerald-800 mb-2">Intensivas</h4>
+                                <p className="text-xs text-gray-600"><b>NO dependen de la cantidad</b> de materia (Temperatura, densidad, solubilidad).</p>
+                            </div>
+
+                            {/* Extensivas */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-amber-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 64 64" fill="none" stroke="#f59e0b" strokeWidth="3" className="w-12 h-12 mb-3">
+                                    <path d="M32 10 v44 M20 54 h24 M12 24 h40 M12 24 l-6 16 h12 z M52 24 l-6 16 h12 z" strokeLinejoin="round"/>
+                                </svg>
+                                <h4 className="font-black text-amber-800 mb-2">Extensivas</h4>
+                                <p className="text-xs text-gray-600"><b>SÍ dependen de la cantidad</b> de materia (Masa, peso, volumen).</p>
+                            </div>
+
+                            {/* Tipos de Sustancias */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-sky-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 64 64" className="w-12 h-12 mb-3">
+                                    <circle cx="20" cy="32" r="8" fill="#38bdf8"/>
+                                    <circle cx="44" cy="24" r="8" fill="#f43f5e"/>
+                                    <circle cx="44" cy="40" r="8" fill="#38bdf8"/>
+                                    <line x1="44" y1="24" x2="44" y2="40" stroke="#94a3b8" strokeWidth="2"/>
+                                </svg>
+                                <h4 className="font-black text-sky-800 mb-2">Sustancias</h4>
+                                <ul className="text-[11px] text-gray-600 text-left list-disc pl-4 space-y-1">
+                                    <li><b>Elemento:</b> Átomos iguales (ej. O₂).</li>
+                                    <li><b>Compuesto:</b> Átomos distintos (ej. H₂O).</li>
+                                    <li><b>Mezcla:</b> Unión física.</li>
+                                </ul>
+                            </div>
+
+                            {/* Cambios de la Materia */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-rose-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 64 64" className="w-12 h-12 mb-3">
+                                    <rect x="12" y="24" width="16" height="16" fill="#bae6fd" stroke="#0ea5e9" strokeWidth="2" rx="2"/>
+                                    <path d="M32 32 h8 l-2 -2 m2 2 l-2 2" stroke="#94a3b8" strokeWidth="2" fill="none"/>
+                                    <path d="M52 24 Q60 44 52 48 Q44 44 52 24" fill="#fecaca" stroke="#ef4444" strokeWidth="2"/> 
+                                </svg>
+                                <h4 className="font-black text-rose-800 mb-2">Cambios</h4>
+                                <p className="text-xs text-gray-600"><b>Físico:</b> No altera estructura (ej. hielo a agua).<br/><b>Químico:</b> Altera estructura y forma nuevas sustancias.</p>
+                            </div>
+
+                            {/* Lavoisier */}
+                            <div className="bg-white p-5 rounded-xl border-2 border-purple-100 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                                <svg viewBox="0 0 64 64" className="w-12 h-12 mb-3">
+                                    <rect x="16" y="24" width="32" height="16" rx="4" fill="#f3f4f6" stroke="#64748b" strokeWidth="2"/>
+                                    <text x="32" y="35" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#334155">10g = 10g</text>
+                                    <path d="M12 40 h40 v4 h-40 z" fill="#94a3b8"/>
+                                </svg>
+                                <h4 className="font-black text-purple-800 mb-2">Conservación de Masa</h4>
+                                <p className="text-xs text-gray-600">"La materia no se crea ni se destruye." En todo cambio físico o químico, <b>la masa total se conserva</b> (Ley de Lavoisier).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* BLOQUE 2: ESTRUCTURA ATÓMICA Y TABLA */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                    <div className="bg-sky-600 px-6 py-4">
+                        <h2 className="text-lg font-bold text-white">2. Estructura y periodicidad de los elementos</h2>
+                    </div>
+                    <div className="p-6 md:p-8">
+                        {/* Modelo Atómico Rediseñado */}
+                        <div className="flex flex-col md:flex-row items-center gap-10 mb-12 border-b border-gray-100 pb-10">
+                            <div className="w-full md:w-1/2 flex justify-center relative">
+                                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+                                    <svg viewBox="0 0 200 200" className="w-64 h-64 mx-auto">
+                                        {/* Órbitas */}
+                                        <circle cx="100" cy="100" r="45" fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4" />
+                                        <circle cx="100" cy="100" r="85" fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4 4" />
+                                        
+                                        {/* Núcleo Consolidado (Boro) */}
+                                        <circle cx="100" cy="100" r="22" fill="#ef4444" stroke="#b91c1c" strokeWidth="2"/>
+                                        <text x="100" y="97" textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">5p⁺</text>
+                                        <text x="100" y="110" textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">6n⁰</text>
+
+                                        {/* Electrones (Azules) Órbita 1 */}
+                                        <circle cx="100" cy="55" r="7" fill="#3b82f6" />
+                                        <text x="100" y="58" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">-</text>
+                                        
+                                        <circle cx="100" cy="145" r="7" fill="#3b82f6" />
+                                        <text x="100" y="148" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">-</text>
+
+                                        {/* Electrones Órbita 2 */}
+                                        <circle cx="100" cy="15" r="7" fill="#3b82f6" />
+                                        <text x="100" y="18" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">-</text>
+                                        
+                                        <circle cx="26" cy="142" r="7" fill="#3b82f6" />
+                                        <text x="26" y="145" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">-</text>
+                                        
+                                        <circle cx="174" cy="142" r="7" fill="#3b82f6" />
+                                        <text x="174" y="145" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">-</text>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-black text-gray-800 mb-4">Modelo Atómico (Bohr)</h3>
+                                <p className="text-gray-500 mb-6 italic">Ejemplo con el átomo de Boro (B)</p>
+                                <ul className="space-y-4 text-gray-700">
+                                    <li className="flex items-start bg-red-50 p-3 rounded-lg border border-red-100">
+                                    <span className="inline-block w-6 h-6 bg-red-500 rounded-full mr-3 shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm">+</span>
+                                    <span><strong>Protones (p⁺):</strong> Carga positiva. Están en el núcleo. Definen el <i>Número Atómico</i>.</span>
+                                    </li>
+                                    <li className="flex items-start bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <span className="inline-block w-6 h-6 bg-slate-400 rounded-full mr-3 shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm">n</span>
+                                    <span><strong>Neutrones (n⁰):</strong> Carga neutra. Están en el núcleo. Junto con los protones definen la <i>Masa Atómica</i>.</span>
+                                    </li>
+                                    <li className="flex items-start bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <span className="inline-block w-6 h-6 bg-blue-500 rounded-full mr-3 shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm">-</span>
+                                    <span><strong>Electrones (e⁻):</strong> Carga negativa. Giran en las órbitas. (En un átomo neutro hay igual cantidad de e⁻ que de p⁺).</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Tabla y Elemento Rediseñados */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10 border-b border-gray-100 pb-10">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Ficha del Elemento</h3>
+                                <div className="w-48 h-56 mx-auto flex flex-col items-center justify-between p-4 bg-white rounded-2xl shadow-lg border-2 border-sky-100 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-2 bg-sky-400"></div>
+                                    <div className="w-full flex justify-between items-start mt-2 px-1">
+                                        <span className="text-2xl font-black text-sky-700">5</span>
+                                        <div className="text-right flex flex-col">
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Masa Atómica</span>
+                                            <span className="text-sm font-bold text-gray-700">10.81</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-center w-full">
+                                        <span className="text-7xl font-serif font-black text-gray-900 leading-none">B</span>
+                                    </div>
+                                    <div className="text-center w-full border-t border-gray-100 pt-3">
+                                        <span className="text-lg font-bold text-gray-800 block">Boro</span>
+                                        <span className="text-[10px] text-sky-600 uppercase font-black tracking-widest block bg-sky-50 rounded-full py-1 mt-1">Metaloide</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Organización Tabla Periódica</h3>
+                                <div className="flex flex-col items-center bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                    <svg viewBox="0 0 200 120" className="w-full max-w-[280px]">
+                                        {/* Metales (Azul) */}
+                                        <rect x="10" y="30" width="20" height="80" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1" rx="2" />
+                                        <rect x="30" y="50" width="20" height="60" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1" rx="2" />
+                                        <rect x="50" y="70" width="100" height="40" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1" rx="2" />
+                                        {/* Hidrógeno (Amarillo) */}
+                                        <rect x="10" y="10" width="20" height="20" fill="#fde047" stroke="#eab308" strokeWidth="1" rx="2" />
+                                        {/* No Metales (Verde claro) */}
+                                        <rect x="150" y="30" width="40" height="80" fill="#86efac" stroke="#22c55e" strokeWidth="1" rx="2" />
+                                        {/* Gases Nobles (Morado) */}
+                                        <rect x="190" y="10" width="20" height="100" fill="#d8b4fe" stroke="#a855f7" strokeWidth="1" rx="2" />
+                                        
+                                        {/* Leyenda */}
+                                        <rect x="25" y="15" width="8" height="8" fill="#93c5fd" rx="1"/> <text x="38" y="23" fontSize="9" fontWeight="bold" fill="#334155">Metales</text>
+                                        <rect x="25" y="30" width="8" height="8" fill="#86efac" rx="1"/> <text x="38" y="38" fontSize="9" fontWeight="bold" fill="#334155">No Metales</text>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Enlaces Químicos */}
+                        <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">Enlaces Químicos (Regla del Octeto)</h3>
+                        <p className="text-sm text-gray-500 mb-6 italic">"Los átomos buscan unirse con otros para tener 8 electrones en su último nivel (como los gases nobles) y así formar un enlace."</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-indigo-100 hover:shadow-md transition">
+                                <h4 className="font-black text-indigo-700 text-lg mb-1">Iónico</h4>
+                                <p className="text-sm font-bold text-gray-800 mb-3 bg-indigo-50 inline-block px-2 py-1 rounded">Metal + No Metal</p>
+                                <p className="text-sm text-gray-600 mb-2 border-b border-gray-100 pb-2">Hay <b>transferencia</b> (robo) de electrones.</p>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                    <li><span className="font-bold text-red-500">Catión (+):</span> Átomo pierde e⁻</li>
+                                    <li><span className="font-bold text-blue-500">Anión (-):</span> Átomo gana e⁻</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-rose-100 hover:shadow-md transition">
+                                <h4 className="font-black text-rose-700 text-lg mb-1">Covalente</h4>
+                                <p className="text-sm font-bold text-gray-800 mb-3 bg-rose-50 inline-block px-2 py-1 rounded">No Metal + No Metal</p>
+                                <p className="text-sm text-gray-600 mb-2 border-b border-gray-100 pb-2">Se <b>comparten</b> electrones entre ellos.</p>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                    <li><span className="font-bold text-rose-600">Polar:</span> Distintos (ej. H₂O)</li>
+                                    <li><span className="font-bold text-rose-600">No Polar:</span> Mismos (ej. O₂)</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-slate-200 hover:shadow-md transition">
+                                <h4 className="font-black text-slate-700 text-lg mb-1">Metálico</h4>
+                                <p className="text-sm font-bold text-gray-800 mb-3 bg-slate-100 inline-block px-2 py-1 rounded">Metal + Metal</p>
+                                <p className="text-sm text-gray-600">Los átomos pierden sus electrones externos y se forma una <b>nube de electrones</b> que los mantiene fuertemente unidos.</p>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* BLOQUE 3: REACCIONES, MOL Y PH */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                    <div className="bg-rose-600 px-6 py-4">
+                        <h2 className="text-lg font-bold text-white">3. La reacción química</h2>
+                    </div>
+                    <div className="p-4 md:p-8">
+                        
+                        {/* Interpretación de Ecuación (RESPONSIVA) */}
+                        <div className="mb-12">
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Interpretación de la Ecuación Química</h3>
+                            <div className="flex flex-col items-center bg-gray-50 p-4 md:p-6 rounded-2xl border border-gray-200">
+                                {/* Contenedor de la fórmula con flex-wrap para celulares */}
+                                <div className="flex flex-wrap items-center justify-center w-full mb-8 font-mono text-2xl sm:text-3xl md:text-5xl gap-y-4">
+                                <div className="whitespace-nowrap">
+                                    <span className="text-red-600 font-black px-1 border-b-2 md:border-b-4 border-red-600">2</span>
+                                    <span className="text-gray-800 font-bold">H</span>
+                                    <sub className="text-blue-600 font-black text-lg md:text-2xl mb-[-10px] md:mb-[-15px]">2</sub> 
+                                    <span className="mx-1 md:mx-2 text-gray-400 font-sans text-lg md:text-2xl">(g)</span>
+                                </div>
+                                
+                                <span className="mx-2 md:mx-4 text-gray-800">+</span> 
+                                
+                                <div className="whitespace-nowrap">
+                                    <span className="text-gray-800 font-bold">O</span>
+                                    <sub className="text-blue-600 font-black text-lg md:text-2xl mb-[-10px] md:mb-[-15px]">2</sub>
+                                    <span className="mx-1 md:mx-2 text-gray-400 font-sans text-lg md:text-2xl">(g)</span>
+                                </div>
+                                
+                                <span className="mx-2 md:mx-6 text-green-600 font-sans">➔</span>
+                                
+                                <div className="whitespace-nowrap">
+                                    <span className="text-red-600 font-black px-1 border-b-2 md:border-b-4 border-red-600">2</span>
+                                    <span className="text-gray-800 font-bold">H</span>
+                                    <sub className="text-blue-600 font-black text-lg md:text-2xl mb-[-10px] md:mb-[-15px]">2</sub>
+                                    <span className="text-gray-800 font-bold">O</span>
+                                    <span className="mx-1 md:mx-2 text-gray-400 font-sans text-lg md:text-2xl">(l)</span>
+                                </div>
+                                </div>
+
+                                {/* Tarjetas de explicación en grid adaptable (1 col celular, 4 escritorio) */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm text-left w-full">
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-red-600">
+                                        <span className="block text-red-700 font-bold mb-1">Coeficientes (2)</span>
+                                        <span className="text-gray-600 text-xs">Indica cantidad de moléculas o moles grandes.</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-600">
+                                        <span className="block text-blue-700 font-bold mb-1">Subíndices (2)</span>
+                                        <span className="text-gray-600 text-xs">Indica cantidad de átomos dentro de la molécula.</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-gray-800">
+                                        <span className="block text-gray-800 font-bold mb-1">Reactivos ➔ Prod.</span>
+                                        <span className="text-gray-600 text-xs">La flecha indica qué sustancias reaccionan y qué producen.</span>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-gray-400">
+                                        <span className="block text-gray-500 font-bold mb-1">Estados (s, l, g, ac)</span>
+                                        <span className="text-gray-600 text-xs">sólido, líquido, gas, acuoso (disuelto en agua).</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* El Mol (Rediseñado y responsivo) */}
+                            <div className="bg-purple-50 p-4 md:p-6 rounded-2xl border-2 border-purple-200 flex flex-col justify-center">
+                                <h4 className="font-black text-purple-900 text-xl mb-2 text-center">El Mol</h4>
+                                <p className="text-sm text-purple-700 mb-6 text-center">Es la unidad base para medir la cantidad de sustancia.</p>
+                                
+                                <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 bg-white p-4 rounded-xl shadow-sm border border-purple-100 mb-4 mx-auto w-full max-w-sm">
+                                    <span className="text-xl md:text-2xl font-black text-purple-900">Moles =</span>
+                                    <div className="flex flex-col items-center">
+                                        <span className="border-b-2 border-purple-900 px-2 md:px-4 pb-1 text-purple-800 font-bold text-base md:text-lg">Masa (gramos)</span>
+                                        <span className="pt-1 text-purple-800 font-bold text-base md:text-lg">Masa Atómica</span>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <span className="inline-block bg-purple-200 text-purple-900 px-3 py-1 rounded-full text-[10px] md:text-xs font-bold font-mono">X gr = (X moles) × (masa atómica)</span>
+                                </div>
+                            </div>
+
+                            {/* Escala pH con Ejemplos */}
+                            <div className="bg-slate-50 p-4 md:p-6 rounded-2xl border-2 border-slate-200 overflow-hidden">
+                                <h4 className="font-black text-gray-800 text-xl mb-6 text-center">Escala de pH</h4>
+                                
+                                {/* Barra de color pH */}
+                                <div className="w-full h-8 rounded-full bg-gradient-to-r from-red-500 via-green-400 to-blue-600 mb-4 relative shadow-inner border border-gray-300">
+                                    <div className="absolute top-0 left-0 w-full h-full flex justify-between px-3 items-center text-sm text-white font-black text-shadow-sm">
+                                        <span>0</span><span>7</span><span>14</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex justify-between text-xs md:text-sm font-bold mt-4 gap-1">
+                                    <div className="text-red-600 flex flex-col items-center text-center w-1/3">
+                                        <span className="text-xl md:text-2xl mb-1">🍋</span>
+                                        <span className="font-black">Ácido</span>
+                                        <span className="text-[10px] md:text-xs text-red-400 mb-2">pH 0 - 6</span>
+                                        <span className="text-[9px] md:text-[10px] text-gray-600 font-normal leading-tight bg-white p-1 rounded border border-red-100 w-full">Limón, Vinagre, Refresco</span>
+                                    </div>
+                                    <div className="text-green-600 flex flex-col items-center text-center w-1/3">
+                                        <span className="text-xl md:text-2xl mb-1">💧</span>
+                                        <span className="font-black">Neutro</span>
+                                        <span className="text-[10px] md:text-xs text-green-500 mb-2">pH = 7</span>
+                                        <span className="text-[9px] md:text-[10px] text-gray-600 font-normal leading-tight bg-white p-1 rounded border border-green-100 w-full">Agua pura, Sangre</span>
+                                    </div>
+                                    <div className="text-blue-600 flex flex-col items-center text-center w-1/3">
+                                        <span className="text-xl md:text-2xl mb-1">🧼</span>
+                                        <span className="font-black">Base</span>
+                                        <span className="text-[10px] md:text-xs text-blue-400 mb-2">pH 8 - 14</span>
+                                        <span className="text-[9px] md:text-[10px] text-gray-600 font-normal leading-tight bg-white p-1 rounded border border-blue-100 w-full">Jabón, Cloro, Bicarbonato</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        const HistoriaMexicoView = () => (
+            <div className="animate-fade-in space-y-8">
+                <div className="mb-8">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-800">Historia de México</h2>
+                    <p className="text-gray-500 mt-1">Desde Mesoamérica hasta la era global. Fechas, personajes y causas clave.</p>
+                </div>
+
+                <HistoryBlock title="6. Culturas Prehispánicas y Nueva España" colorClass="bg-green-800" imageUrl="https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?auto=format&fit=crop&w=1200&q=80" imageAlt="Pirámide de Teotihuacán">
+                    <EventCard 
+                        title="Mesoamérica" period="2500 a.C. - 1521 d.C."
+                        desc="Área cultural con civilizaciones agrícolas (Olmecas, Mayas, Mexicas) unidas por religión politeísta, maíz y calendario."
+                        timeline={[
+                            { year: "1200 a.C.", event: "Apogeo Olmeca (Cultura Madre)." },
+                            { year: "1325 d.C.", event: "Fundación de Tenochtitlán (Mexicas)." }
+                        ]}
+                        chars="Moctezuma II (último gran tlatoani antes de la conquista)."
+                        causes="Condiciones geográficas favorables en el centro/sur de México permitieron la agricultura."
+                        consequences="Desarrollo de imperios complejos que posteriormente fueron conquistados por los españoles."
+                    />
+                    <EventCard 
+                        title="Virreinato y Nueva España" period="1521 - 1821"
+                        desc="Consolidación del dominio español. Se instaura el Virreinato, las audiencias y el Santo Oficio (Inquisición)."
+                        timeline={[
+                            { year: "1521", event: "Caída de Tenochtitlán." },
+                            { year: "1535", event: "Se funda oficialmente el Virreinato." },
+                            { year: "1571", event: "Se establece la Inquisición en México." }
+                        ]}
+                        chars="Hernán Cortés, Antonio de Mendoza (Primer Virrey)."
+                        causes="Conquista militar y espiritual (evangelización) por parte de la Corona Española."
+                        consequences="Mestizaje cultural y racial, extracción de riquezas (minería) y sistema de castas."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="7. Consolidación e Independencia" colorClass="bg-red-800" imageUrl="https://images.unsplash.com/photo-1582561424760-0321d6daa24f?auto=format&fit=crop&w=1200&q=80" imageAlt="Campana de Dolores">
+                    <EventCard 
+                        title="Reformas Borbónicas" period="Siglo XVIII"
+                        desc="El 'Absolutismo Ilustrado' llega a España. El rey impone reformas para extraer más riqueza de Nueva España."
+                        timeline={[
+                            { year: "1767", event: "Expulsión de los Jesuitas." }
+                        ]}
+                        chars="Rey Carlos III."
+                        causes="España necesitaba dinero para sus guerras en Europa."
+                        consequences="Descontento generalizado y surgimiento del 'Criollismo' (identidad de los españoles nacidos en América)."
+                    />
+                    <EventCard 
+                        title="Independencia de México" period="1810 - 1821"
+                        desc="Guerra insurgente contra el dominio español hasta lograr la soberanía."
+                        timeline={[
+                            { year: "1810", event: "Grito de Dolores (Hidalgo)." },
+                            { year: "1813", event: "Sentimientos de la Nación (Morelos)." },
+                            { year: "1821", event: "Plan de Iguala y entrada del Ejército Trigarante." }
+                        ]}
+                        chars="Miguel Hidalgo, José María Morelos, Vicente Guerrero, Agustín de Iturbide."
+                        causes="Desigualdad social, Reformas Borbónicas y la invasión de Napoleón a España (1808)."
+                        consequences="Nace México como país independiente (primero como Imperio, luego como República)."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="8. De la Independencia a la Revolución" colorClass="bg-amber-700" imageUrl="https://images.unsplash.com/photo-1629807469399-a4175344d9f6?auto=format&fit=crop&w=1200&q=80" imageAlt="Ferrocarril antiguo">
+                    <EventCard 
+                        title="Conflictos e Intervenciones" period="1821 - 1867"
+                        desc="México pierde territorio y sufre invasiones extranjeras mientras busca un sistema político (Liberales vs Conservadores)."
+                        timeline={[
+                            { year: "1836", event: "Independencia de Texas." },
+                            { year: "1846-1848", event: "Guerra con EE.UU. (pérdida de la mitad del territorio)." },
+                            { year: "1862-1867", event: "Intervención Francesa y 2do Imperio." }
+                        ]}
+                        chars="Antonio López de Santa Anna, Maximiliano de Habsburgo, Benito Juárez."
+                        causes="Inestabilidad política interna y deudas externas acumuladas."
+                        consequences="Consolidación de la República y fuerte sentimiento de identidad nacional."
+                    />
+                    <EventCard 
+                        title="La Reforma y el Porfiriato" period="1855 - 1911"
+                        desc="Separación Iglesia-Estado y posterior dictadura de 'Paz, Orden y Progreso' que trae modernidad pero gran desigualdad."
+                        timeline={[
+                            { year: "1857", event: "Constitución Liberal." },
+                            { year: "1876", event: "Porfirio Díaz asume el poder." },
+                            { year: "1906-1907", event: "Huelgas de Cananea y Río Blanco." }
+                        ]}
+                        chars="Benito Juárez, Porfirio Díaz, Hermanos Flores Magón."
+                        causes="Necesidad de pacificar el país y atraer inversión extranjera."
+                        consequences="Modernización (ferrocarriles), pero represión y pobreza extrema que detona la Revolución."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="9. Instituciones y Desarrollo (1911-1979)" colorClass="bg-blue-800" imageUrl="https://images.unsplash.com/photo-1587392652618-97e3a9cfa28f?auto=format&fit=crop&w=1200&q=80" imageAlt="Revolucionarios mexicanos">
+                    <EventCard 
+                        title="Revolución Mexicana" period="1910 - 1920"
+                        desc="Levantamiento armado contra Díaz. Surgen movimientos campesinos, obreros y políticos."
+                        timeline={[
+                            { year: "1910", event: "Plan de San Luis (Madero llama a las armas)." },
+                            { year: "1917", event: "Promulgación de la nueva Constitución." }
+                        ]}
+                        chars="Francisco I. Madero, Emiliano Zapata, Pancho Villa, Venustiano Carranza."
+                        causes="Dictadura prolongada, falta de democracia y tierras concentradas en pocas manos (latifundios)."
+                        consequences="Constitución de 1917 (derechos sociales, educación laica, reparto agrario)."
+                    />
+                    <EventCard 
+                        title="Caudillismo y 'Milagro Mexicano'" period="1920 - 1970"
+                        desc="Institucionalización del país (creación del PRI) y crecimiento económico sostenido apoyado por el contexto global."
+                        timeline={[
+                            { year: "1926-1929", event: "Guerra Cristera." },
+                            { year: "1938", event: "Expropiación Petrolera." }
+                        ]}
+                        chars="Plutarco Elías Calles, Lázaro Cárdenas."
+                        causes="Fin de la etapa armada y necesidad de crear un Estado fuerte (Caudillismo)."
+                        consequences="Estabilidad política (Partido único), reforma agraria y modernización industrial."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="10. México en la Era Global (1970-2000)" colorClass="bg-cyan-800" imageUrl="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80" imageAlt="Ciudad de México moderna">
+                    <EventCard 
+                        title="Neoliberalismo y TLC" period="1980s - 1990s"
+                        desc="Apertura comercial de México al mundo, venta de empresas estatales e integración con Norteamérica."
+                        timeline={[
+                            { year: "1982", event: "Nacionalización de la banca (crisis económica)." },
+                            { year: "1994", event: "Entrada en vigor del TLCAN / Levantamiento Zapatista." }
+                        ]}
+                        chars="Carlos Salinas de Gortari."
+                        causes="Crisis económicas recurrentes en los 70s y 80s que agotaron el modelo anterior."
+                        consequences="Modernización comercial, pero aumento de contrastes sociales y desigualdad."
+                    />
+                    <EventCard 
+                        title="Democratización" period="1990 - 2000"
+                        desc="Lucha ciudadana por elecciones libres y fin del partido hegemónico."
+                        timeline={[
+                            { year: "1990", event: "Creación del IFE (hoy INE)." },
+                            { year: "2000", event: "Alternancia en la presidencia (gana la oposición)." }
+                        ]}
+                        chars="Cuauhtémoc Cárdenas, Vicente Fox."
+                        causes="Descontento ciudadano y exigencia de participación (impulsado por movimientos sociales desde los 60s)."
+                        consequences="Transición pacífica a la democracia y mayor pluralidad política."
+                    />
+                </HistoryBlock>
+            </div>
+        );
+
+        const HistoriaUniversalView = () => (
+            <div className="animate-fade-in space-y-8">
+                <div className="mb-8">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-800">Historia Universal</h2>
+                    <p className="text-gray-500 mt-1">Sucesos clave ordenados cronológicamente, con causas, efectos y personajes de examen.</p>
+                </div>
+
+                <HistoryBlock title="1. Principios del S. XVI a XVIII" colorClass="bg-stone-700" imageUrl="https://images.unsplash.com/photo-1582561424760-0321d6daa24f?auto=format&fit=crop&w=1200&q=80" imageAlt="Mapa antiguo">
+                    <EventCard 
+                        title="Humanismo y Renacimiento" period="Siglos XV - XVI"
+                        desc="Renovación cultural europea. El ser humano y la razón se convierten en el centro del pensamiento."
+                        timeline={[
+                            { year: "1453", event: "Caída de Constantinopla." },
+                            { year: "1517", event: "Martín Lutero inicia la Reforma Protestante." }
+                        ]}
+                        chars="Erasmo de Rotterdam, Leonardo da Vinci, Martín Lutero."
+                        causes="Redescubrimiento de textos clásicos (griegos y romanos) y el invento de la imprenta."
+                        consequences="Cuestionamiento de la Iglesia Católica y preparación del terreno para la Revolución Científica."
+                    />
+                    <EventCard 
+                        title="Expediciones Marítimas" period="Finales Siglo XV - XVI"
+                        desc="Búsqueda de nuevas rutas comerciales hacia Asia navegando hacia el occidente o bordeando África."
+                        timeline={[
+                            { year: "1492", event: "Colón llega a América." },
+                            { year: "1498", event: "Vasco da Gama llega a la India." },
+                            { year: "1519-1522", event: "Primera vuelta al mundo (Magallanes/Elcano)." }
+                        ]}
+                        chars="Cristóbal Colón, Vasco da Gama, Fernando de Magallanes."
+                        causes="La caída de Constantinopla (1453) bloqueó el paso de Europa hacia Asia (especias)."
+                        consequences="Colonización de América, creación de grandes imperios y primera globalización."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="2. De mediados del S. XVIII a XIX" colorClass="bg-amber-600" imageUrl="https://images.unsplash.com/photo-1604169727402-511bb740e29b?auto=format&fit=crop&w=1200&q=80" imageAlt="Revolución Industrial">
+                    <EventCard 
+                        title="La Ilustración" period="Siglo XVIII"
+                        desc="Movimiento basado en la razón para combatir la ignorancia. Los reyes adoptan el 'Despotismo Ilustrado'."
+                        timeline={[
+                            { year: "1751", event: "Se publica el primer volumen de La Enciclopedia." }
+                        ]}
+                        chars="Montesquieu (división de poderes), Rousseau, Voltaire, Diderot."
+                        causes="Descontento burgués con el Absolutismo Monárquico."
+                        consequences="Inspira directamente la Independencia de las 13 Colonias y la Revolución Francesa."
+                    />
+                    <EventCard 
+                        title="Independencia 13 Colonias" period="1776 - 1783"
+                        desc="Las colonias británicas en Norteamérica se rebelan contra la Corona y forman EE.UU."
+                        timeline={[
+                            { year: "1773", event: "Motín del Té en Boston." },
+                            { year: "1776", event: "Declaración de Independencia (4 de julio)." },
+                            { year: "1783", event: "Tratado de París (Inglaterra reconoce independencia)." }
+                        ]}
+                        chars="George Washington, Thomas Jefferson, Benjamin Franklin."
+                        causes="Ideas de la Ilustración y altos impuestos cobrados por Inglaterra."
+                        consequences="Primera república democrática y primera Constitución escrita de la historia."
+                    />
+                    <EventCard 
+                        title="Revolución Francesa" period="1789 - 1799"
+                        desc="Derrocamiento violento de la monarquía absoluta francesa y promulgación de los Derechos del Hombre."
+                        timeline={[
+                            { year: "1789", event: "Toma de la Bastilla (14 de julio)." },
+                            { year: "1793", event: "Ejecución del rey Luis XVI." },
+                            { year: "1799", event: "Golpe de estado de Napoleón Bonaparte." }
+                        ]}
+                        chars="Luis XVI, María Antonieta, Robespierre, Napoleón Bonaparte."
+                        causes="Pobreza extrema, desigualdad social, influencia del éxito de EE.UU."
+                        consequences="Fin del absolutismo en Francia, consolidación de la burguesía y ejemplo para América Latina."
+                    />
+                    <EventCard 
+                        title="Revolución Industrial" period="Siglos XVIII - XIX"
+                        desc="Paso del trabajo agrícola manual a la producción en masa en fábricas."
+                        timeline={[
+                            { year: "1769", event: "James Watt patenta la máquina de vapor." },
+                            { year: "1814", event: "Primera locomotora a vapor (Stephenson)." }
+                        ]}
+                        chars="James Watt, George Stephenson, Karl Marx (crítico)."
+                        causes="Nuevos inventos tecnológicos y migración masiva de campesinos a la ciudad."
+                        consequences="Surgimiento de ciudades industriales, creación de la clase obrera (proletariado) y sindicatos."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="3. De mediados del S. XIX a 1920" colorClass="bg-blue-800" imageUrl="https://images.unsplash.com/photo-1580130601254-05fa235abeab?auto=format&fit=crop&w=1200&q=80" imageAlt="Trincheras Primera Guerra">
+                    <EventCard 
+                        title="Nacionalismo e Imperialismo" period="Finales Siglo XIX"
+                        desc="Países europeos compiten por conquistar territorios en África y Asia."
+                        timeline={[
+                            { year: "1870-1871", event: "Unificación de Alemania e Italia." },
+                            { year: "1884-1885", event: "Conferencia de Berlín (Europa se reparte África)." }
+                        ]}
+                        chars="Otto von Bismarck (Alemania), Reina Victoria (Inglaterra)."
+                        causes="La Revolución Industrial exigía materias primas baratas y nuevos mercados."
+                        consequences="Explotación de colonias, 'Paz Armada' (carrera de armas) y tensión internacional."
+                    />
+                    <EventCard 
+                        title="Primera Guerra Mundial" period="1914 - 1918"
+                        desc="Conflicto global entre la Triple Entente (Aliados) y la Triple Alianza (Eje central)."
+                        timeline={[
+                            { year: "1914", event: "Asesinato del Archiduque Francisco Fernando." },
+                            { year: "1917", event: "EE.UU. entra a la guerra / Revolución Rusa." },
+                            { year: "1919", event: "Firma del Tratado de Versalles." }
+                        ]}
+                        chars="Archiduque Francisco Fernando, Zar Nicolás II, Woodrow Wilson."
+                        causes="Asesinato del Archiduque (detonante). Tensiones imperiales previas."
+                        consequences="Tratado de Versalles (castigo a Alemania). Desaparición de imperios Ruso, Austrohúngaro y Otomano."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="4. El Mundo entre 1920 y 1960" colorClass="bg-red-800" imageUrl="https://images.unsplash.com/photo-1574883441584-c5a47e452cd5?auto=format&fit=crop&w=1200&q=80" imageAlt="Aviones de Combate">
+                    <EventCard 
+                        title="Entreguerras y Totalitarismos" period="1920 - 1939"
+                        desc="Crisis económica mundial y surgimiento de dictaduras militares en Europa."
+                        timeline={[
+                            { year: "1922", event: "Mussolini llega al poder (Fascismo)." },
+                            { year: "1929", event: "Caída de la Bolsa de Nueva York (Gran Depresión)." },
+                            { year: "1933", event: "Hitler es nombrado Canciller (Nazismo)." }
+                        ]}
+                        chars="Adolf Hitler, Benito Mussolini, Iósif Stalin."
+                        causes="Pobreza extrema tras 1929 y resentimiento alemán por el Tratado de Versalles."
+                        consequences="Rearme militar agresivo de Alemania y políticas expansionistas."
+                    />
+                    <EventCard 
+                        title="Segunda Guerra Mundial" period="1939 - 1945"
+                        desc="Eje (Alemania, Italia, Japón) contra Aliados (Gran Bretaña, EE.UU., URSS)."
+                        timeline={[
+                            { year: "1939", event: "Alemania invade Polonia (Inicia la guerra)." },
+                            { year: "1941", event: "Japón ataca Pearl Harbor (EE.UU. entra)." },
+                            { year: "1944", event: "Desembarco en Normandía (Día D)." },
+                            { year: "1945", event: "Bombas atómicas en Hiroshima y Nagasaki." }
+                        ]}
+                        chars="Winston Churchill, Adolf Hitler, Harry Truman."
+                        causes="Expansionismo de Hitler y violación del Tratado de Versalles."
+                        consequences="Creación de la ONU, división de Alemania y surgimiento de la Guerra Fría."
+                    />
+                </HistoryBlock>
+
+                <HistoryBlock title="5. Décadas Recientes" colorClass="bg-cyan-700" imageUrl="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80" imageAlt="Globalización">
+                    <EventCard 
+                        title="La Guerra Fría" period="1947 - 1991"
+                        desc="Tensión mundial y amenaza nuclear. Capitalismo (EE.UU.) vs Comunismo (URSS)."
+                        timeline={[
+                            { year: "1962", event: "Crisis de los Misiles en Cuba." },
+                            { year: "1969", event: "Llegada del hombre a la Luna." },
+                            { year: "1989", event: "Caída del Muro de Berlín." },
+                            { year: "1991", event: "Desintegración de la URSS." }
+                        ]}
+                        chars="John F. Kennedy, Fidel Castro, Mijaíl Gorbachov."
+                        causes="Diferencias económicas y políticas insalvables entre las dos superpotencias ganadoras de la IIGW."
+                        consequences="Carrera espacial/armamentista y victoria global del modelo capitalista."
+                    />
+                    <EventCard 
+                        title="Globalización Económica" period="1990 - Actualidad"
+                        desc="Integración mundial económica, cultural y tecnológica."
+                        timeline={[
+                            { year: "1990-1991", event: "Guerra del Golfo Pérsico." },
+                            { year: "1995", event: "Creación de la Organización Mundial del Comercio (OMC)." },
+                            { year: "2001", event: "Ataques del 11 de septiembre en EE.UU." }
+                        ]}
+                        chars="George H.W. Bush, Saddam Hussein."
+                        causes="Fin de la Guerra Fría y el nacimiento del Internet."
+                        consequences="Desarrollo comercial rápido, pero aumento de desigualdad social y problemas ambientales."
+                    />
+                </HistoryBlock>
+            </div>
+        );
+
+        const TopicBlock = ({ title, colorClass, items, formulas, imageUrl, imageAlt }) => {
+            const [imgSrc, setImgSrc] = useState(imageUrl);
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8 transition-all hover:shadow-md">
+                    <div className={`${colorClass} px-6 py-3`}><h2 className="text-lg font-bold text-white">{title}</h2></div>
+                    <div className="flex flex-col md:flex-row">
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                            <ul className="space-y-3 mb-6">
+                                {items.map((item, idx) => (
+                                    <li key={idx} className="text-gray-600 text-sm md:text-base flex items-start">
+                                        <span className={`mr-2 font-bold mt-0.5 ${colorClass.replace('bg-', 'text-')}`}>•</span>
+                                        <span><strong>{item.title}:</strong> {item.desc}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {formulas && <div className="flex flex-wrap gap-4 mt-auto">{formulas}</div>}
+                        </div>
+                        <div className="w-full md:w-2/5 lg:w-1/3 bg-gray-50 flex items-center justify-center p-4 border-t md:border-t-0 md:border-l border-gray-100">
+                            <img src={imgSrc} alt={imageAlt} className="w-full h-48 md:h-full object-cover rounded-xl shadow-sm" onError={() => setImgSrc('https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=600&q=80')}/>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FisicaView = () => (
+            <div className="animate-fade-in space-y-8">
+                <div className="mb-8">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-800">Física</h2>
+                    <p className="text-gray-500 mt-1">Formulario visual simplificado para secundaria.</p>
+                </div>
+                
+                <TopicBlock title="1. El movimiento" colorClass="bg-emerald-500" imageUrl="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80" imageAlt="Movimiento"
+                    items={[
+                        { title: "Velocidad y Rapidez", desc: "Relación entre distancia y tiempo." },
+                        { title: "Aceleración", desc: "Cambio de velocidad en el tiempo." },
+                        { title: "Caída libre", desc: "Todos los objetos caen con misma aceleración por la gravedad." }
+                    ]}
+                    formulas={
+                        <React.Fragment>
+                            <MathFormula label="Velocidad"><span>v =</span><Fraction top="d" bottom="t" /></MathFormula>
+                            <MathFormula label="Aceleración"><span>a =</span><Fraction top={<React.Fragment>v<sub>f</sub> - v<sub>i</sub></React.Fragment>} bottom="t" /></MathFormula>
+                        </React.Fragment>
+                    }
+                />
+                
+                <TopicBlock title="2. Las fuerzas" colorClass="bg-blue-600" imageUrl="https://images.unsplash.com/photo-1633425026605-e43501a3cecc?auto=format&fit=crop&w=600&q=80" imageAlt="Fuerzas"
+                    items={[
+                        { title: "2da Ley de Newton", desc: "Fuerza depende de masa y aceleración." },
+                        { title: "El Peso", desc: "Fuerza con que la Tierra jala la masa (Gravedad)." },
+                        { title: "E. Mecánica", desc: "Suma de E. Cinética (movimiento) y E. Potencial (altura)." }
+                    ]}
+                    formulas={
+                        <React.Fragment>
+                            <MathFormula label="Fuerza"><span>F = m &middot; a</span></MathFormula>
+                            <MathFormula label="Peso"><span>w = m &middot; g</span></MathFormula>
+                            <MathFormula label="E. Mecánica"><span>E<sub>m</sub> = E<sub>c</sub> + E<sub>p</sub></span></MathFormula>
+                        </React.Fragment>
+                    }
+                />
+                
+                <TopicBlock title="3. Materia y Presión" colorClass="bg-amber-500" imageUrl="https://images.unsplash.com/photo-1614935151651-0bea6508abb6?auto=format&fit=crop&w=600&q=80" imageAlt="Partículas"
+                    items={[
+                        { title: "Modelo Cinético", desc: "Todo está formado por partículas: muy juntas (sólido), libres (gas)." },
+                        { title: "Presión", desc: "Fuerza sobre un área." },
+                        { title: "P. de Pascal", desc: "Presión en líquido se transmite igual en todas partes." }
+                    ]}
+                    formulas={
+                        <React.Fragment>
+                            <MathFormula label="Presión"><span>P =</span><Fraction top="F" bottom="A" /></MathFormula>
+                            <MathFormula label="P. de Pascal"><Fraction top={<React.Fragment>F<sub>1</sub></React.Fragment>} bottom={<React.Fragment>A<sub>1</sub></React.Fragment>} /><span className="mx-2">=</span><Fraction top={<React.Fragment>F<sub>2</sub></React.Fragment>} bottom={<React.Fragment>A<sub>2</sub></React.Fragment>} /></MathFormula>
+                        </React.Fragment>
+                    }
+                />
+
+                <TopicBlock title="4. Estructura Interna" colorClass="bg-purple-600" imageUrl="https://images.unsplash.com/photo-1543160655-bd38ee35e61d?auto=format&fit=crop&w=600&q=80" imageAlt="Prisma luz"
+                    items={[
+                        { title: "El Átomo", desc: "Núcleo (+ y neutro) rodeado de electrones (-)." },
+                        { title: "Luz y Refracción", desc: "La luz blanca se separa en colores en un prisma." }
+                    ]}
+                    formulas={
+                        <React.Fragment>
+                            <MathFormula label="Vel. de Onda"><span>v = &lambda; &middot; f</span></MathFormula>
+                        </React.Fragment>
+                    }
+                />
+            </div>
+        );
+// --- VISTA DE GEOGRAFÍA ---
+        const GeografiaView = () => (
+             <div className="animate-fade-in space-y-8">
+                 <div className="mb-8 text-center md:text-left">
+                     <h2 className="text-2xl md:text-3xl font-black text-gray-800">Geografía</h2>
+                     <p className="text-gray-500 mt-1">El espacio geográfico, recursos naturales, población, economía y cultura.</p>
+                 </div>
+                 
+                 {/* BLOQUE 1: ESPACIO GEOGRÁFICO Y MAPAS */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-teal-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">1. El Espacio Geográfico y los Mapas</h2>
+                     </div>
+                     <div className="p-4 md:p-8 bg-slate-50">
+                         
+                         {/* Componentes y Categorías */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-b border-gray-200 pb-8">
+                             <div>
+                                 <h3 className="font-black text-teal-800 mb-4 border-b pb-2">Componentes del Espacio</h3>
+                                 <div className="space-y-3">
+                                     <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                                         <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-xl shrink-0">🏔️</div>
+                                         <p className="text-sm text-gray-700"><b>Naturales:</b> No dependen del humano (Montañas, ríos, flora, fauna).</p>
+                                     </div>
+                                     <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                                         <div className="w-8 h-8 rounded bg-purple-100 flex items-center justify-center text-xl shrink-0">👥</div>
+                                         <p className="text-sm text-gray-700"><b>Sociales:</b> Relacionados con la población (Migración, demografía).</p>
+                                     </div>
+                                     <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm">
+                                         <div className="w-8 h-8 rounded bg-yellow-100 flex items-center justify-center text-xl shrink-0">🏭</div>
+                                         <p className="text-sm text-gray-700"><b>Económicos:</b> Actividades (Primarias, secundarias, terciarias).</p>
+                                     </div>
+                                 </div>
+                             </div>
+                             <div>
+                                 <h3 className="font-black text-teal-800 mb-4 border-b pb-2">Categorías de Análisis</h3>
+                                 <ul className="text-sm text-gray-700 space-y-2 bg-white p-4 rounded-xl shadow-sm">
+                                     <li><b>Región:</b> Determinado por clima, etnias o gobierno.</li>
+                                     <li><b>Paisaje:</b> Lo que puede ser visto en conjunto desde un punto.</li>
+                                     <li><b>Medio:</b> Relación entre el hombre y la naturaleza.</li>
+                                     <li><b>Territorio:</b> Delimitación política (municipio, país).</li>
+                                     <li><b>Lugar:</b> Espacio inmediato con nombre o coordenadas exactas.</li>
+                                 </ul>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Coordenadas, Latitud, Longitud y Husos Horarios */}
+                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-teal-100 mb-8">
+                             <h3 className="font-black text-teal-900 mb-6 text-center text-xl">Líneas, Coordenadas y Husos Horarios</h3>
+                             <div className="flex flex-col lg:flex-row items-center gap-8">
+                                 
+                                 {/* Globo SVG Explicativo */}
+                                 <div className="w-full lg:w-1/3 flex justify-center">
+                                     <svg viewBox="0 0 200 200" className="w-full max-w-[200px]">
+                                         <circle cx="100" cy="100" r="90" fill="#bae6fd" stroke="#0284c7" strokeWidth="2"/>
+                                         {/* Paralelos (Latitud) */}
+                                         <ellipse cx="100" cy="100" rx="90" ry="20" fill="none" stroke="#dc2626" strokeWidth="2" strokeDasharray="4"/>
+                                         <line x1="10" y1="100" x2="190" y2="100" stroke="#dc2626" strokeWidth="3"/>
+                                         <text x="140" y="95" fill="#dc2626" fontSize="10" fontWeight="bold">Ecuador (0°)</text>
+                                         <text x="25" y="80" fill="#dc2626" fontSize="12" fontWeight="bold">Latitud</text>
+                                         
+                                         {/* Meridianos (Longitud) */}
+                                         <ellipse cx="100" cy="100" rx="30" ry="90" fill="none" stroke="#2563eb" strokeWidth="1.5"/>
+                                         <line x1="100" y1="10" x2="100" y2="190" stroke="#2563eb" strokeWidth="3"/>
+                                         <text x="105" y="40" fill="#2563eb" fontSize="10" fontWeight="bold">Greenwich (0°)</text>
+                                         <text x="110" y="160" fill="#2563eb" fontSize="12" fontWeight="bold">Longitud</text>
+                                         
+                                         {/* Polos */}
+                                         <circle cx="100" cy="10" r="4" fill="#1e293b"/> <text x="85" y="8" fontSize="8" fontWeight="bold">Norte</text>
+                                         <circle cx="100" cy="190" r="4" fill="#1e293b"/> <text x="85" y="198" fontSize="8" fontWeight="bold">Sur</text>
+                                     </svg>
+                                 </div>
+
+                                 {/* Texto Coordenadas */}
+                                 <div className="w-full lg:w-1/3 text-sm text-gray-700 space-y-4">
+                                     <div className="bg-red-50 p-3 rounded-lg border-l-4 border-red-500">
+                                         <p><b className="text-red-700">Paralelos (Latitud):</b> Líneas horizontales. El Ecuador divide Norte/Sur. Se mide en grados hasta 90°.</p>
+                                     </div>
+                                     <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                                         <p><b className="text-blue-700">Meridianos (Longitud):</b> Líneas verticales de Polo a Polo. Greenwich divide Este/Oeste hasta 180°.</p>
+                                     </div>
+                                     <div className="bg-amber-50 p-3 rounded-lg border-l-4 border-amber-500">
+                                         <p><b className="text-amber-700">Altitud:</b> Distancia vertical medida desde el <b>nivel del mar (0m)</b> hacia arriba.</p>
+                                     </div>
+                                 </div>
+
+                                 {/* Husos Horarios */}
+                                 <div className="w-full lg:w-1/3 bg-slate-800 text-white p-5 rounded-xl flex flex-col justify-center items-center text-center shadow-lg">
+                                     <span className="text-3xl mb-2">⌚</span>
+                                     <h4 className="font-bold text-teal-300 mb-2">Husos Horarios</h4>
+                                     <p className="text-xs text-slate-300 mb-3">La Tierra se divide en 24 meridianos (1 hora c/u).</p>
+                                     <div className="flex items-center justify-between w-full text-xs font-bold bg-slate-700 p-2 rounded">
+                                         <span className="text-red-400">Restar Hora (-)</span>
+                                         <span className="text-white border-x border-slate-500 px-2">Greenwich (0)</span>
+                                         <span className="text-green-400">Sumar Hora (+)</span>
+                                     </div>
+                                     <div className="w-full flex justify-between text-[10px] mt-1 px-4 text-slate-400">
+                                         <span>Oeste (West)</span> <span>Este (East)</span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Representaciones del Espacio y SIG */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div>
+                                 <h3 className="font-black text-teal-800 mb-3 border-b pb-1">Representaciones del Espacio</h3>
+                                 <ul className="text-xs text-gray-700 space-y-2">
+                                     <li>🗺️ <b>Croquis:</b> Dibujo simplificado sin medidas ni instrumentos.</li>
+                                     <li>📐 <b>Plano:</b> Representación 2D con escala y mayor precisión.</li>
+                                     <li>📍 <b>Mapa:</b> Superficie bidimensional con proyección y simbología.</li>
+                                     <li>📚 <b>Atlas:</b> Colección sistemática de mapas.</li>
+                                     <li>🌎 <b>Globo Terráqueo:</b> Modelo 3D esférico a escala.</li>
+                                     <li>✈️ <b>Foto Aérea / Satélite:</b> Tomadas desde altura o el espacio.</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
+                                 <h3 className="font-black text-teal-900 mb-2">Sistemas Geográficos</h3>
+                                 <p className="text-xs text-gray-700 mb-2"><b>SIG (Sistemas de Información Geográfica):</b> Herramientas para organizar, almacenar y analizar datos de un lugar (Ej. INEGI en México).</p>
+                                 <p className="text-xs text-gray-700"><b>GPS (Posicionamiento Global):</b> Permite posicionar objetos con precisión usando triangulación con 4 o más satélites.</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {}
+                 {/* BLOQUE 2: RECURSOS NATURALES Y AMBIENTE */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-green-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">2. Naturaleza y Planeta Tierra</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Rotación y Traslación */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                             <div className="bg-sky-50 p-5 rounded-xl border border-sky-100 flex items-center gap-4">
+                                 <div className="text-4xl">🌍<span className="text-xl inline-block animate-spin">🔄</span></div>
+                                 <div>
+                                     <h4 className="font-bold text-sky-900">Rotación (24 horas)</h4>
+                                     <p className="text-xs text-gray-700 mt-1">Gira sobre su propio eje. <br/><b className="text-sky-700">Genera:</b> El día, la noche y husos horarios.</p>
+                                 </div>
+                             </div>
+                             <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 flex items-center gap-4">
+                                 <div className="text-4xl">☀️<span className="text-lg ml-1">🌎</span></div>
+                                 <div>
+                                     <h4 className="font-bold text-orange-900">Traslación (365 días)</h4>
+                                     <p className="text-xs text-gray-700 mt-1">Órbita elíptica alrededor del Sol. <br/><b className="text-orange-700">Genera:</b> Las estaciones del año.</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Tectónica de Placas (SVG) */}
+                         <h3 className="font-black text-gray-800 mb-4 text-center text-xl">Límites de Placas Tectónicas y Vulcanismo</h3>
+                         <p className="text-xs text-gray-500 text-center mb-6">La litosfera está fragmentada en 15 placas mayores y 43 menores. Su movimiento crea 3 límites:</p>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                             {/* Convergente */}
+                             <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-red-100 flex flex-col items-center text-center">
+                                 <h4 className="font-bold text-red-700 mb-2 text-sm uppercase">Convergente</h4>
+                                 <svg viewBox="0 0 100 60" className="w-full h-20 mb-2">
+                                     {/* Astenosfera */}
+                                     <rect x="0" y="30" width="100" height="30" fill="#fca5a5" />
+                                     {/* Placa que subduce */}
+                                     <path d="M 0 15 L 40 15 L 60 40 L 0 40 Z" fill="#94a3b8" stroke="#334155"/>
+                                     {/* Placa que se monta */}
+                                     <path d="M 40 15 L 100 15 L 100 30 L 60 30 Z" fill="#64748b" stroke="#334155"/>
+                                     <text x="50" y="55" fontSize="8" fontWeight="bold" fill="#7f1d1d">Subducción</text>
+                                     {/* Flechas */}
+                                     <path d="M 10 10 L 30 10 L 25 5 M 30 10 L 25 15" fill="none" stroke="black" strokeWidth="1.5"/>
+                                     <path d="M 90 10 L 70 10 L 75 5 M 70 10 L 75 15" fill="none" stroke="black" strokeWidth="1.5"/>
+                                 </svg>
+                                 <p className="text-[11px] text-gray-600">Las placas <b>chocan</b>. La más densa se hunde bajo la otra.</p>
+                             </div>
+
+                             {/* Divergente */}
+                             <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-blue-100 flex flex-col items-center text-center">
+                                 <h4 className="font-bold text-blue-700 mb-2 text-sm uppercase">Divergente</h4>
+                                 <svg viewBox="0 0 100 60" className="w-full h-20 mb-2">
+                                     <rect x="0" y="30" width="100" height="30" fill="#fca5a5" />
+                                     <path d="M 0 15 L 45 15 L 45 30 L 0 30 Z" fill="#94a3b8" stroke="#334155"/>
+                                     <path d="M 55 15 L 100 15 L 100 30 L 55 30 Z" fill="#94a3b8" stroke="#334155"/>
+                                     {/* Magma */}
+                                     <path d="M 45 30 L 50 15 L 55 30 Z" fill="#ef4444"/>
+                                     {/* Flechas */}
+                                     <path d="M 35 10 L 15 10 L 20 5 M 15 10 L 20 15" fill="none" stroke="black" strokeWidth="1.5"/>
+                                     <path d="M 65 10 L 85 10 L 80 5 M 85 10 L 80 15" fill="none" stroke="black" strokeWidth="1.5"/>
+                                 </svg>
+                                 <p className="text-[11px] text-gray-600">Las placas se <b>separan</b>. Emerge magma creando nueva corteza.</p>
+                             </div>
+
+                             {/* Transformante */}
+                             <div className="bg-white p-4 rounded-xl shadow-sm border-2 border-amber-100 flex flex-col items-center text-center">
+                                 <h4 className="font-bold text-amber-700 mb-2 text-sm uppercase">Transformante</h4>
+                                 <svg viewBox="0 0 100 60" className="w-full h-20 mb-2">
+                                     <rect x="0" y="30" width="100" height="30" fill="#fca5a5" />
+                                     <path d="M 0 10 L 100 10 L 100 20 L 0 20 Z" fill="#94a3b8" stroke="#334155"/>
+                                     <path d="M 0 20 L 100 20 L 100 30 L 0 30 Z" fill="#64748b" stroke="#334155"/>
+                                     {/* Flechas */}
+                                     <path d="M 20 15 L 40 15 L 35 12 M 40 15 L 35 18" fill="none" stroke="black" strokeWidth="1.5"/>
+                                     <path d="M 80 25 L 60 25 L 65 22 M 60 25 L 65 28" fill="none" stroke="black" strokeWidth="1.5"/>
+                                 </svg>
+                                 <p className="text-[11px] text-gray-600">Movimiento <b>paralelo</b> en sentidos opuestos (causan sismos).</p>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Ciclo del Agua y Biósfera */}
+                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 border-t border-gray-100 pt-10">
+                             
+                             <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100 relative overflow-hidden">
+                                 <h3 className="font-black text-sky-900 mb-4 text-center">Ciclo Hidrológico</h3>
+                                 <svg viewBox="0 0 300 200" className="w-full h-48">
+                                     {/* Cielo */}
+                                     <rect x="0" y="0" width="300" height="200" fill="#e0f2fe" />
+                                     {/* Sol */}
+                                     <circle cx="40" cy="30" r="15" fill="#fde047" />
+                                     {/* Montaña */}
+                                     <path d="M 0 150 L 100 50 L 200 150 Z" fill="#94a3b8" />
+                                     <path d="M 70 80 L 100 50 L 130 80 L 110 90 L 100 75 L 90 90 Z" fill="#f8fafc" />
+                                     {/* Tierra */}
+                                     <rect x="0" y="150" width="300" height="50" fill="#84cc16" />
+                                     <path d="M 0 170 L 300 170 L 300 200 L 0 200 Z" fill="#854d0e" />
+                                     {/* Mar */}
+                                     <rect x="200" y="150" width="100" height="50" fill="#0284c7" />
+                                     
+                                     {/* Nubes */}
+                                     <path d="M 120 40 Q 130 30 140 40 Q 150 30 160 40 Q 170 50 140 50 Z" fill="#ffffff" />
+                                     <path d="M 180 50 Q 190 40 200 50 Q 210 40 220 50 Q 230 60 200 60 Z" fill="#94a3b8" />
+                                     
+                                     {/* Lluvia (Precipitación) */}
+                                     <line x1="190" y1="65" x2="185" y2="75" stroke="#0284c7" strokeWidth="2" />
+                                     <line x1="200" y1="65" x2="195" y2="75" stroke="#0284c7" strokeWidth="2" />
+                                     <line x1="210" y1="65" x2="205" y2="75" stroke="#0284c7" strokeWidth="2" />
+                                     <text x="180" y="90" fontSize="10" fontWeight="bold" fill="#0369a1">Precipitación</text>
+
+                                     {/* Evaporación */}
+                                     <path d="M 230 140 L 230 110" fill="none" stroke="#f8fafc" strokeWidth="2" strokeDasharray="4" markerEnd="url(#arrowUp)"/>
+                                     <path d="M 250 140 L 250 110" fill="none" stroke="#f8fafc" strokeWidth="2" strokeDasharray="4" />
+                                     <text x="240" y="100" fontSize="10" fontWeight="bold" fill="#0369a1">Evaporación</text>
+
+                                     {/* Condensación */}
+                                     <path d="M 220 35 L 170 35" fill="none" stroke="#0369a1" strokeWidth="2" markerEnd="url(#arrowLeft)"/>
+                                     <text x="175" y="25" fontSize="10" fontWeight="bold" fill="#0369a1">Condensación</text>
+
+                                     {/* Infiltración & Escorrentía */}
+                                     <text x="40" y="165" fontSize="10" fontWeight="bold" fill="#1e3a8a">Escorrentía</text>
+                                     <text x="80" y="185" fontSize="10" fontWeight="bold" fill="#bae6fd">Infiltración (Agua Subt.)</text>
+
+                                     <defs>
+                                        <marker id="arrowUp" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                          <path d="M 0 10 L 5 0 L 10 10 z" fill="#f8fafc" />
+                                        </marker>
+                                        <marker id="arrowLeft" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                          <path d="M 10 0 L 0 5 L 10 10 z" fill="#0369a1" />
+                                        </marker>
+                                     </defs>
+                                 </svg>
+                             </div>
+
+                             <div className="flex flex-col justify-center">
+                                 <h3 className="font-black text-gray-800 mb-3">La Biósfera</h3>
+                                 <p className="text-sm text-gray-700 mb-4">Suma de los medios donde se desarrolla la vida. Integrada por:</p>
+                                 <ul className="text-sm space-y-3 mb-4">
+                                     <li className="flex items-center gap-2"><span className="w-3 h-3 bg-blue-500 rounded-full"></span><b>Atmósfera:</b> Capa gaseosa (aire).</li>
+                                     <li className="flex items-center gap-2"><span className="w-3 h-3 bg-amber-600 rounded-full"></span><b>Litósfera:</b> Capa exterior sólida (corteza terrestre).</li>
+                                     <li className="flex items-center gap-2"><span className="w-3 h-3 bg-cyan-400 rounded-full"></span><b>Hidrósfera:</b> Conjunto de aguas (97% salada, 3% dulce).</li>
+                                 </ul>
+                                 <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-xs text-gray-700">
+                                     <b className="text-emerald-800">Biodiversidad:</b> Especies <b>endémicas</b> (solo habitan un lugar, ej. Ajolote) y en <b>peligro de extinción</b>.
+                                 </div>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Atmósfera y Clima */}
+                         <h3 className="font-black text-gray-800 mb-4 text-center border-t border-gray-100 pt-8 text-xl">Capas de la Atmósfera y Clima</h3>
+                         
+                         {/* Diagrama de Capas */}
+                         <div className="flex flex-col-reverse md:flex-row rounded-xl overflow-hidden border border-gray-200 mb-8 shadow-sm">
+                             <div className="bg-sky-100 p-4 text-center md:w-1/5 flex flex-col justify-between">
+                                 <b className="text-sm text-sky-900">Troposfera</b>
+                                 <span className="text-xs text-sky-700 mt-2 block">0-14 km<br/>Clima, lluvia, vida</span>
+                             </div>
+                             <div className="bg-sky-200 p-4 text-center md:w-1/5 border-t md:border-t-0 md:border-l border-white flex flex-col justify-between">
+                                 <b className="text-sm text-sky-900">Estratosfera</b>
+                                 <span className="text-xs text-sky-700 mt-2 block">16-50 km<br/>Capa de Ozono, Aviones</span>
+                             </div>
+                             <div className="bg-sky-300 p-4 text-center md:w-1/5 border-t md:border-t-0 md:border-l border-white flex flex-col justify-between">
+                                 <b className="text-sm text-sky-900">Mesosfera</b>
+                                 <span className="text-xs text-sky-800 mt-2 block">50-300 km<br/>Más fría, meteoritos</span>
+                             </div>
+                             <div className="bg-sky-500 p-4 text-center md:w-1/5 border-t md:border-t-0 md:border-l border-white text-white flex flex-col justify-between">
+                                 <b className="text-sm">Termosfera</b>
+                                 <span className="text-xs text-sky-100 mt-2 block">Rayos X/Gamma<br/>Auroras Boreales</span>
+                             </div>
+                             <div className="bg-slate-900 p-4 text-center md:w-1/5 border-t md:border-t-0 md:border-l border-white text-white flex flex-col justify-between">
+                                 <b className="text-sm">Exosfera</b>
+                                 <span className="text-xs text-slate-300 mt-2 block">&gt;500 km<br/>Espacio, satélites</span>
+                             </div>
+                         </div>
+
+                         {/* Elementos y Factores del Clima */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                 <h4 className="font-bold text-gray-800 mb-3 border-b pb-2">Elementos del Clima</h4>
+                                 <ul className="text-xs text-gray-600 space-y-2">
+                                     <li>🌡️ <b>Temperatura:</b> Grado de calor o frío.</li>
+                                     <li>⬇️ <b>Presión Atmosférica:</b> Fuerza del aire sobre la Tierra.</li>
+                                     <li>💨 <b>Viento:</b> Aire en movimiento.</li>
+                                     <li>🌧️ <b>Precipitación:</b> Lluvia, nieve, granizo.</li>
+                                     <li>💧 <b>Humedad:</b> Vapor de agua (se mide con higrómetro).</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                 <h4 className="font-bold text-gray-800 mb-3 border-b pb-2">Factores del Clima (Lo modifican)</h4>
+                                 <ul className="text-xs text-gray-600 space-y-2">
+                                     <li>🌐 <b>Latitud:</b> Más cerca del Ecuador = Más calor.</li>
+                                     <li>⛰️ <b>Altitud:</b> Más altura (montañas) = Menor temperatura.</li>
+                                     <li>🏖️ <b>Continentalidad:</b> Cercanía al mar regula temperatura (suave).</li>
+                                     <li>🌊 <b>Corrientes Marinas:</b> Cálidas o frías cambian la temp. costera.</li>
+                                 </ul>
+                             </div>
+                         </div>
+                         
+                         {/* Climas Köppen */}
+                         <div className="mt-6 bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm">
+                             <b className="text-gray-800">Clasificación de Climas (Köppen):</b> Se basa en la relación entre clima y vegetación. 
+                             <span className="text-red-600 font-bold ml-2">A: Tropical</span>, <span className="text-amber-600 font-bold ml-2">B: Seco</span>, <span className="text-green-600 font-bold ml-2">C: Templado</span>, <span className="text-blue-600 font-bold ml-2">D: Frío</span>. 
+                             <span className="text-xs text-gray-500 block mt-1">Lluvias: f (todo el año), m (monzón), w (verano), s (invierno).</span>
+                         </div>
+                     </div>
+                 </div>
+
+                 {}
+                 {/* BLOQUE 3 Y 4: POBLACIÓN Y ECONOMÍA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-amber-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">3 y 4. Población, Riesgos y Economía</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 border-b border-gray-100 pb-10">
+                             {/* Población y Migración */}
+                             <div>
+                                 <h3 className="font-black text-amber-900 mb-3">Demografía y Migración</h3>
+                                 <div className="space-y-3">
+                                     <p className="text-sm text-gray-700"><b className="text-amber-700">Población Absoluta:</b> Total de habitantes de un lugar.</p>
+                                     <p className="text-sm text-gray-700"><b className="text-amber-700">Población Relativa:</b> Densidad (Habitantes por km²).</p>
+                                     <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-sm">
+                                         <b>Migración:</b><br/>
+                                         <span className="text-red-600">Emigrante:</span> El que se va. <br/>
+                                         <span className="text-green-600">Inmigrante:</span> El que llega.<br/>
+                                         <span className="text-xs text-gray-500">Causas: Búsqueda de seguridad y empleo.</span>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             {/* Riesgos */}
+                             <div>
+                                 <h3 className="font-black text-red-800 mb-3">Tipos de Riesgos</h3>
+                                 <div className="grid grid-cols-2 gap-3 text-xs">
+                                     <div className="bg-red-50 p-3 rounded-lg border border-red-100">
+                                         <span className="text-xl mb-1 block">🌋</span>
+                                         <b className="text-red-900">Geológicos</b><br/><span className="text-gray-600">Sismos, volcanes, hundimientos, deslaves.</span>
+                                     </div>
+                                     <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                         <span className="text-xl mb-1 block">🌪️</span>
+                                         <b className="text-blue-900">Hidrometeorológicos</b><br/><span className="text-gray-600">Huracanes, sequías, inundaciones, nevadas.</span>
+                                     </div>
+                                     <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                         <span className="text-xl mb-1 block">🛢️</span>
+                                         <b className="text-purple-900">Químicos</b><br/><span className="text-gray-600">Derrames de petróleo, fugas radiactivas.</span>
+                                     </div>
+                                     <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                                         <span className="text-xl mb-1 block">🦠</span>
+                                         <b className="text-green-900">Sanitarios</b><br/><span className="text-gray-600">Pandemias, plagas, bacterias, virus.</span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Economía y Desigualdad */}
+                         <h3 className="font-black text-gray-800 mb-4 text-center text-xl">Economía Global y Desigualdad</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                 <h4 className="font-bold text-slate-800 mb-2">Desarrollo e IDH</h4>
+                                 <p className="text-xs text-gray-600 mb-2"><b>Centro-Periferia:</b> Países centrales (desarrollados) y periféricos (subdesarrollados).</p>
+                                 <p className="text-xs text-gray-600"><b>IDH (Índice Desarrollo Humano):</b> Mide 1) Vida larga/saludable, 2) Conocimientos/Educación, 3) Nivel de vida (PIB). Escala de 0 a 1.</p>
+                             </div>
+                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                 <h4 className="font-bold text-slate-800 mb-2">Organismos Internacionales</h4>
+                                 <ul className="text-xs text-gray-600 space-y-1">
+                                     <li>🏦 <b>FMI:</b> Estabilidad financiera.</li>
+                                     <li>🌍 <b>Banco Mundial:</b> Créditos para desarrollo.</li>
+                                     <li>⚖️ <b>OMC:</b> Normas de comercio global.</li>
+                                     <li>🤝 <b>OCDE:</b> Políticas de prosperidad e igualdad.</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                 <h4 className="font-bold text-slate-800 mb-2">Globalización</h4>
+                                 <p className="text-xs text-gray-600 mb-2">Mundo interconectado. Las <b>empresas transnacionales</b> operan fuera de su país de origen.</p>
+                                 <p className="text-xs text-gray-600">Flujos comerciales: Importación y Exportación.</p>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {}
+                 {/* BLOQUE 5: CULTURA Y POLÍTICA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-indigo-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">5. Espacios Culturales y Políticos</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Cultura */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 border-b border-gray-100 pb-10">
+                             <div>
+                                 <h3 className="font-black text-indigo-900 mb-3">Diversidad Cultural</h3>
+                                 <p className="text-sm text-gray-700 mb-2"><b>Etnias:</b> Grupo con misma raza, lengua y costumbres.</p>
+                                 <p className="text-sm text-gray-700 mb-4"><b>Patrimonio:</b> Material (monumentos, arqueología) e Inmaterial (costumbres).</p>
+                                 <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-xs">
+                                     <b className="text-indigo-800 block mb-1">Globalización Cultural:</b> 
+                                     Los medios de comunicación y la <b>publicidad</b> influyen para instaurar estilos de vida extranjeros y fomentar consumo masivo.
+                                 </div>
+                             </div>
+                             <div className="flex flex-col justify-center">
+                                 <div className="bg-slate-100 p-4 rounded-xl mb-3 border-l-4 border-slate-400">
+                                     <b className="text-slate-800 text-sm">Multiculturalidad:</b> Varias culturas conviven en un espacio pero <b>SIN mezclarse</b> ni interactuar (ej. barrios segregados).
+                                 </div>
+                                 <div className="bg-emerald-100 p-4 rounded-xl border-l-4 border-emerald-500">
+                                     <b className="text-emerald-800 text-sm">Interculturalidad:</b> Culturas conviven e <b>interactúan en igualdad</b>, compartiendo costumbres en un mismo salón o lugar.
+                                 </div>
+                             </div>
+                         </div>
+
+                         {}
+                         {/* Soberanía Marítima (Diagrama SVG) */}
+                         <h3 className="font-black text-gray-800 mb-4 text-center text-xl">Zonas de Soberanía Nacional Marítima</h3>
+                         <div className="bg-sky-50 rounded-2xl p-4 md:p-6 border border-sky-100 flex flex-col lg:flex-row items-center gap-6 shadow-inner">
+                             <div className="w-full lg:w-1/2">
+                                 <svg viewBox="0 0 400 200" className="w-full bg-white rounded-lg shadow-sm border border-gray-200">
+                                     {/* Cielo */}
+                                     <rect x="0" y="0" width="400" height="70" fill="#e0f2fe" />
+                                     
+                                     {/* Alta Mar */}
+                                     <rect x="250" y="70" width="150" height="130" fill="#bae6fd" />
+                                     <text x="325" y="100" fontSize="12" fontWeight="bold" fill="#0369a1" textAnchor="middle">Alta Mar</text>
+
+                                     {/* ZEE */}
+                                     <rect x="100" y="70" width="150" height="130" fill="#7dd3fc" />
+                                     
+                                     {/* Mar Territorial */}
+                                     <rect x="50" y="70" width="50" height="130" fill="#38bdf8" />
+                                     
+                                     {/* Tierra / Plataforma */}
+                                     <path d="M 0 70 L 50 70 C 60 70, 70 80, 80 100 C 150 180, 200 180, 400 200 L 0 200 Z" fill="#fde68a" stroke="#d97706" strokeWidth="2" />
+                                     <text x="20" y="120" fontSize="14" fontWeight="bold" fill="#92400e">Costa</text>
+
+                                     {/* Líneas y Medidas */}
+                                     <line x1="50" y1="50" x2="50" y2="70" stroke="#000" strokeDasharray="4"/>
+                                     <line x1="100" y1="50" x2="100" y2="70" stroke="#000" strokeDasharray="4"/>
+                                     <line x1="250" y1="30" x2="250" y2="70" stroke="#000" strokeDasharray="4"/>
+                                     
+                                     {/* Flechas Mar Territorial */}
+                                     <path d="M 50 60 L 100 60 M 50 60 L 55 55 M 50 60 L 55 65 M 100 60 L 95 55 M 100 60 L 95 65" fill="none" stroke="black" strokeWidth="1.5"/>
+                                     <text x="75" y="55" fontSize="9" fontWeight="bold" textAnchor="middle">12 millas</text>
+                                     <text x="75" y="40" fontSize="10" fontWeight="bold" fill="#0369a1" textAnchor="middle" transform="rotate(-90 75,40)">Mar Territorial</text>
+
+                                     {/* Flechas ZEE */}
+                                     <path d="M 50 40 L 250 40 M 50 40 L 55 35 M 50 40 L 55 45 M 250 40 L 245 35 M 250 40 L 245 45" fill="none" stroke="black" strokeWidth="1.5"/>
+                                     <text x="175" y="35" fontSize="10" fontWeight="bold" textAnchor="middle">200 millas</text>
+                                     <text x="175" y="55" fontSize="11" fontWeight="bold" fill="#0369a1" textAnchor="middle">Zona Económica Exclusiva</text>
+                                 </svg>
+                             </div>
+                             <div className="w-full lg:w-1/2 text-sm text-gray-700 space-y-4">
+                                 <div className="bg-white p-3 rounded-lg border border-sky-200 shadow-sm">
+                                     <b className="text-sky-800">1. Mar Territorial (12 millas):</b> Mide desde la línea de costa. El Estado tiene soberanía absoluta (igual que en tierra).
+                                 </div>
+                                 <div className="bg-white p-3 rounded-lg border border-sky-300 shadow-sm">
+                                     <b className="text-sky-900">2. Zona Económica Exclusiva / ZEE (200 millas):</b> El Estado tiene derecho exclusivo a explotar recursos (pesca, petróleo), pero hay libre tránsito internacional.
+                                 </div>
+                                 <div className="bg-white p-3 rounded-lg border border-gray-300 shadow-sm">
+                                     <b className="text-gray-800">Espacio Aéreo e Insular:</b> Soberanía sobre todo el aire encima del territorio y mar territorial (hasta 25 millas de altura) y sobre todas las islas del país.
+                                 </div>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+             </div>
+        );
+// --- VISTA DE BIOLOGÍA ---
+        const BiologiaView = () => (
+             <div className="animate-fade-in space-y-8">
+                 <div className="mb-8 text-center md:text-left">
+                     <h2 className="text-2xl md:text-3xl font-black text-gray-800">Biología</h2>
+                     <p className="text-gray-500 mt-1">Biodiversidad, nutrición, célula, metabolismo, ecología, reproducción y genética.</p>
+                 </div>
+                 
+                 {/* BLOQUE 1: BIODIVERSIDAD Y SERES VIVOS */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-emerald-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">1. Características de los Seres Vivos y Biodiversidad</h2>
+                     </div>
+                     <div className="p-4 md:p-8 bg-emerald-50">
+                         
+                         <h3 className="font-black text-emerald-800 mb-4 text-center">7 Características de la Vida</h3>
+                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">🧬</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Células</h4>
+                                 <p className="text-[11px] text-gray-600">Todo ser vivo está formado por una o más células.</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">⚡</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Irritabilidad</h4>
+                                 <p className="text-[11px] text-gray-600">Capacidad de responder a estímulos (luz, calor, dolor).</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">⚖️</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Homeostasis</h4>
+                                 <p className="text-[11px] text-gray-600">Mantener el equilibrio interno (ej. sudar para enfriarse).</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">⚙️</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Metabolismo</h4>
+                                 <p className="text-[11px] text-gray-600">Reacciones químicas. <b>Anabolismo</b> (construye) y <b>Catabolismo</b> (destruye).</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">🦎</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Adaptación</h4>
+                                 <p className="text-[11px] text-gray-600">Adecuarse al entorno para sobrevivir y evolucionar.</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center">
+                                 <div className="text-3xl mb-2">👶</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Reproducción</h4>
+                                 <p className="text-[11px] text-gray-600">Crear descendencia para perpetuar la especie.</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 text-center lg:col-span-2">
+                                 <div className="text-3xl mb-2">🍎</div>
+                                 <h4 className="font-bold text-emerald-800 text-sm mb-1">Nutrición</h4>
+                                 <p className="text-[11px] text-gray-600"><b>Autótrofos:</b> Producen su propio alimento (Plantas).<br/><b>Heterótrofos:</b> Tienen que consumir a otros seres vivos (Animales).</p>
+                             </div>
+                         </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="bg-white p-5 rounded-xl border border-teal-200 shadow-sm">
+                                 <h3 className="font-black text-teal-800 mb-3 border-b pb-2">Evolución (Charles Darwin)</h3>
+                                 <p className="text-sm text-gray-700 mb-2"><b>Selección Natural:</b> Las especies mejor adaptadas a su medio ambiente son las que sobreviven y se reproducen.</p>
+                                 <p className="text-sm text-gray-700"><b>Ancestro Común:</b> Todas las especies actuales provienen de especies anteriores que cambiaron gradualmente.</p>
+                             </div>
+                             <div className="bg-white p-5 rounded-xl border border-green-200 shadow-sm">
+                                 <h3 className="font-black text-green-800 mb-3 border-b pb-2">Riesgos y Sustentabilidad</h3>
+                                 <p className="text-xs text-gray-700 mb-2">⚠️ <b>Pérdida de Biodiversidad:</b> Causada por deforestación, contaminación, caza furtiva, sobreexplotación y especies invasoras.</p>
+                                 <p className="text-xs text-gray-700 border-t pt-2 mt-2">🌱 <b>Desarrollo Sustentable:</b> Es satisfacer las necesidades de la generación actual <i>sin comprometer</i> los recursos de las generaciones futuras (ej. reciclar, usar energías limpias).</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 2: NUTRICIÓN Y SALUD */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-orange-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">2. Nutrición y Salud</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         <h3 className="font-black text-orange-900 mb-4 text-center">Biomoléculas (Lo que comemos)</h3>
+                         <div className="overflow-x-auto rounded-xl shadow-sm border border-orange-200 mb-8">
+                             <table className="w-full text-left text-sm">
+                                 <thead className="bg-orange-100 text-orange-900">
+                                     <tr>
+                                         <th className="p-3 font-bold">Biomolécula</th>
+                                         <th className="p-3 font-bold border-l border-orange-200">Función Principal</th>
+                                         <th className="p-3 font-bold border-l border-orange-200">Fuentes (Plato del bien comer)</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-gray-100 bg-white">
+                                     <tr>
+                                         <td className="p-3 font-bold text-gray-700">🥖 Carbohidratos</td>
+                                         <td className="p-3 border-l text-gray-600">Dan <b>energía rápida</b> para el cuerpo.</td>
+                                         <td className="p-3 border-l text-gray-600">Cereales, tortilla, pan, papa, azúcares.</td>
+                                     </tr>
+                                     <tr>
+                                         <td className="p-3 font-bold text-gray-700">🥑 Lípidos (Grasas)</td>
+                                         <td className="p-3 border-l text-gray-600"><b>Reserva de energía</b> a largo plazo y aíslan el frío.</td>
+                                         <td className="p-3 border-l text-gray-600">Aceites, aguacate, nueces, mantequilla.</td>
+                                     </tr>
+                                     <tr>
+                                         <td className="p-3 font-bold text-gray-700">🥩 Proteínas</td>
+                                         <td className="p-3 border-l text-gray-600">Construyen y reparan <b>tejidos, músculos</b> y células.</td>
+                                         <td className="p-3 border-l text-gray-600">Carnes, huevo, leche, leguminosas (frijol).</td>
+                                     </tr>
+                                     <tr>
+                                         <td className="p-3 font-bold text-gray-700">🥦 Vitaminas y Minerales</td>
+                                         <td className="p-3 border-l text-gray-600">Regulan el cuerpo y fortalecen el <b>sistema inmune</b>.</td>
+                                         <td className="p-3 border-l text-gray-600">Frutas y verduras frescas.</td>
+                                     </tr>
+                                 </tbody>
+                             </table>
+                         </div>
+
+                         <div className="bg-rose-50 border border-rose-200 p-5 rounded-xl text-sm">
+                             <h3 className="font-black text-rose-800 mb-3 border-b border-rose-200 pb-2">Prevención de Enfermedades Nutricionales</h3>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 <p className="text-gray-700">🍔 <b>Obesidad:</b> Acumulación excesiva de grasa por consumir más calorías (lípidos/carbohidratos) de las que se gastan. Factor de riesgo para diabetes.</p>
+                                 <p className="text-gray-700">🪞 <b>Anorexia:</b> Trastorno psicológico donde la persona se percibe con sobrepeso y deja de comer, llegando a desnutrición severa.</p>
+                                 <p className="text-gray-700">🤮 <b>Bulimia:</b> Trastorno caracterizado por atracones de comida seguidos de culpa, provocando el vómito inducido o uso de laxantes.</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 3: CÉLULA Y METABOLISMO (FOTOSÍNTESIS Y RESPIRACIÓN MEJORADOS) */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-lime-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">3. La Célula y el Metabolismo</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Células Resumen */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                                 <div className="text-4xl">🦠</div>
+                                 <div>
+                                     <h4 className="font-black text-slate-800">Célula Procariota</h4>
+                                     <p className="text-xs text-gray-600"><b>No tiene núcleo.</b> El ADN está suelto. Son unicelulares. (Ej. Bacterias).</p>
+                                 </div>
+                             </div>
+                             <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex items-center gap-4">
+                                 <div className="text-4xl">🧬</div>
+                                 <div>
+                                     <h4 className="font-black text-blue-800">Célula Eucariota</h4>
+                                     <p className="text-xs text-gray-600"><b>Sí tiene núcleo</b> que protege el ADN y organelos complejos. (Ej. Animales y Plantas).</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                             {/* Fotosíntesis */}
+                             <div className="bg-green-50 rounded-xl p-5 border border-green-200 flex flex-col items-center">
+                                 <h3 className="font-black text-green-800 text-xl mb-1">Fotosíntesis</h3>
+                                 <p className="text-xs text-green-700 mb-4 font-bold uppercase tracking-wide">Cloroplastos (Plantas - Anabolismo)</p>
+                                 
+                                 {/* SVG con polígonos manuales para evitar desfasamientos de marcadores */}
+                                 <svg viewBox="0 0 300 150" className="w-full max-w-[280px] mb-4 bg-white rounded-lg shadow-sm border border-green-100 p-2">
+                                     {/* Planta Central */}
+                                     <path d="M 150 140 C 150 100, 120 80, 150 40" fill="none" stroke="#22c55e" strokeWidth="5"/>
+                                     <path d="M 150 90 C 110 70, 110 50, 150 50" fill="#4ade80" stroke="#16a34a" strokeWidth="2"/>
+                                     <path d="M 150 110 C 190 90, 190 70, 150 70" fill="#4ade80" stroke="#16a34a" strokeWidth="2"/>
+                                     {/* Sol */}
+                                     <circle cx="40" cy="30" r="15" fill="#fde047"/>
+                                     
+                                     {/* Entradas (Línea + Triángulo = Flecha perfecta) */}
+                                     <line x1="50" y1="60" x2="105" y2="75" stroke="#3b82f6" strokeWidth="3" />
+                                     <polygon points="110,76 100,71 103,79" fill="#3b82f6"/>
+                                     <text x="35" y="70" fontSize="12" fill="#3b82f6" fontWeight="bold">H₂O + Luz</text>
+                                     
+                                     <line x1="50" y1="110" x2="105" y2="95" stroke="#64748b" strokeWidth="3" />
+                                     <polygon points="110,93 103,89 100,98" fill="#64748b"/>
+                                     <text x="50" y="125" fontSize="12" fill="#475569" fontWeight="bold">CO₂</text>
+
+                                     {/* Salidas */}
+                                     <line x1="180" y1="75" x2="235" y2="60" stroke="#ef4444" strokeWidth="3" />
+                                     <polygon points="240,58 230,57 233,65" fill="#ef4444"/>
+                                     <text x="245" y="65" fontSize="12" fill="#ef4444" fontWeight="bold">O₂</text>
+
+                                     <line x1="180" y1="95" x2="235" y2="110" stroke="#ca8a04" strokeWidth="3" />
+                                     <polygon points="240,111 233,104 230,113" fill="#ca8a04"/>
+                                     <text x="245" y="115" fontSize="12" fill="#ca8a04" fontWeight="bold">Glucosa</text>
+                                 </svg>
+                                 <div className="bg-white p-3 rounded-lg border border-green-200 w-full text-center">
+                                     <p className="font-mono text-xs font-black text-green-900">6CO₂ + 6H₂O + Luz ➔ C₆H₁₂O₆ + 6O₂</p>
+                                 </div>
+                             </div>
+
+                             {/* Respiración Celular */}
+                             <div className="bg-sky-50 rounded-xl p-5 border border-sky-200 flex flex-col items-center">
+                                 <h3 className="font-black text-sky-800 text-xl mb-1">Respiración Celular</h3>
+                                 <p className="text-xs text-sky-700 mb-4 font-bold uppercase tracking-wide">Mitocondrias (Catabolismo)</p>
+                                 
+                                 <svg viewBox="0 0 300 150" className="w-full max-w-[280px] mb-4 bg-white rounded-lg shadow-sm border border-sky-100 p-2">
+                                     {/* Mitocondria Central */}
+                                     <ellipse cx="150" cy="75" rx="50" ry="30" fill="#fed7aa" stroke="#ca8a04" strokeWidth="3"/>
+                                     <path d="M 110 75 Q 120 50 130 75 T 150 75 T 170 75 T 190 75" fill="none" stroke="#ca8a04" strokeWidth="2"/>
+                                     
+                                     {/* Entradas */}
+                                     <line x1="60" y1="60" x2="95" y2="70" stroke="#ca8a04" strokeWidth="3"/>
+                                     <polygon points="100,71 90,66 93,75" fill="#ca8a04"/>
+                                     <text x="15" y="55" fontSize="12" fill="#ca8a04" fontWeight="bold">Glucosa</text>
+                                     
+                                     <line x1="60" y1="100" x2="95" y2="85" stroke="#ef4444" strokeWidth="3"/>
+                                     <polygon points="100,83 93,79 90,88" fill="#ef4444"/>
+                                     <text x="35" y="110" fontSize="12" fill="#ef4444" fontWeight="bold">O₂</text>
+
+                                     {/* Salidas */}
+                                     <line x1="200" y1="70" x2="245" y2="55" stroke="#64748b" strokeWidth="3"/>
+                                     <polygon points="250,53 240,52 243,60" fill="#64748b"/>
+                                     <text x="255" y="55" fontSize="12" fill="#475569" fontWeight="bold">CO₂</text>
+
+                                     <line x1="200" y1="85" x2="245" y2="100" stroke="#3b82f6" strokeWidth="3"/>
+                                     <polygon points="250,101 243,94 240,103" fill="#3b82f6"/>
+                                     <text x="255" y="110" fontSize="12" fill="#3b82f6" fontWeight="bold">H₂O</text>
+
+                                     {/* ATP */}
+                                     <line x1="150" y1="40" x2="150" y2="15" stroke="#f59e0b" strokeWidth="3"/>
+                                     <polygon points="150,10 145,20 155,20" fill="#f59e0b"/>
+                                     <text x="150" y="8" fontSize="12" fill="#d97706" fontWeight="black" textAnchor="middle">ATP</text>
+                                 </svg>
+                                 <div className="bg-white p-3 rounded-lg border border-sky-200 w-full text-center">
+                                     <p className="font-mono text-xs font-black text-sky-900">C₆H₁₂O₆ + 6O₂ ➔ 6CO₂ + 6H₂O + ATP</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                         {/* Procesos de la Respiración */}
+                         <div className="mt-6 bg-slate-800 text-white p-4 rounded-xl text-sm shadow-md grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div>
+                                 <h4 className="font-bold text-yellow-400 mb-1 border-b border-slate-600 pb-1">1. Glucólisis (En el Citoplasma)</h4>
+                                 <p className="text-xs text-gray-300">Es el primer paso. Rompe la molécula de glucosa a la mitad sin necesidad de oxígeno. Libera muy poca energía.</p>
+                             </div>
+                             <div>
+                                 <h4 className="font-bold text-yellow-400 mb-1 border-b border-slate-600 pb-1">2. Ciclo de Krebs (En la Mitocondria)</h4>
+                                 <p className="text-xs text-gray-300">Es el paso fuerte. Aquí entra el oxígeno (Aerobia), se descompone la glucosa por completo, liberando mucho <b>ATP</b> y dióxido de carbono (CO₂).</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 4: CICLO DEL CARBONO Y CALENTAMIENTO GLOBAL */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-amber-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">4. Ciclo del Carbono y Calentamiento Global</h2>
+                     </div>
+                     <div className="p-4 md:p-8 bg-amber-50">
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="bg-white p-5 rounded-xl border border-amber-200 shadow-sm">
+                                 <h3 className="font-black text-amber-800 mb-3 border-b pb-2">El Ciclo del Carbono</h3>
+                                 <p className="text-sm text-gray-700 mb-2">Es el reciclaje natural del CO₂ en la Tierra:</p>
+                                 <ul className="text-xs text-gray-600 space-y-2">
+                                     <li>🌱 Las <b>plantas</b> absorben el CO₂ del aire en la fotosíntesis.</li>
+                                     <li>🐇 Los animales comen plantas (carbono) y al respirar <b>exhalan CO₂</b>.</li>
+                                     <li>🍄 Al morir, bacterias descomponen los cuerpos liberando más CO₂ al suelo o aire.</li>
+                                 </ul>
+                             </div>
+                             
+                             <div className="bg-white p-5 rounded-xl border border-red-200 shadow-sm">
+                                 <h3 className="font-black text-red-800 mb-3 border-b pb-2">Calentamiento Global</h3>
+                                 <p className="text-xs text-gray-700 mb-2"><b>Causa:</b> La interacción humana (fábricas, autos, quemar combustibles fósiles y deforestación) libera un <i>exceso</i> de CO₂ y gases de efecto invernadero que la naturaleza no alcanza a reciclar.</p>
+                                 <p className="text-xs text-gray-700"><b>Consecuencias:</b> Estos gases atrapan el calor del sol en la atmósfera, elevando la temperatura de la Tierra. Causa derretimiento de polos, sequías extremas y extinción de especies.</p>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 5: REPRODUCCIÓN Y SEXUALIDAD */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-fuchsia-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">5. Reproducción y Sexualidad Humana</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         {/* Mitosis vs Meiosis */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                             <div className="bg-fuchsia-50 p-4 rounded-xl border border-fuchsia-200">
+                                 <h3 className="font-black text-fuchsia-800 text-center mb-2">MITOSIS</h3>
+                                 <p className="text-xs text-center text-gray-600 mb-2">Reproducción de células del cuerpo (somáticas).</p>
+                                 <ul className="text-xs text-gray-700 bg-white p-3 rounded shadow-sm space-y-1">
+                                     <li>✅ Resultan <b>2</b> células hijas idénticas.</li>
+                                     <li>✅ Mantienen los mismos cromosomas (Diploides).</li>
+                                     <li>✅ Sirve para crecer y sanar heridas.</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-rose-50 p-4 rounded-xl border border-rose-200">
+                                 <h3 className="font-black text-rose-800 text-center mb-2">MEIOSIS</h3>
+                                 <p className="text-xs text-center text-gray-600 mb-2">Creación de células sexuales (Espermatozoide/Óvulo).</p>
+                                 <ul className="text-xs text-gray-700 bg-white p-3 rounded shadow-sm space-y-1">
+                                     <li>✅ Resultan <b>4</b> células diferentes.</li>
+                                     <li>✅ Tienen <b>la mitad</b> de los cromosomas (Haploides).</li>
+                                     <li>✅ Genera variabilidad genética para la evolución.</li>
+                                 </ul>
+                             </div>
+                         </div>
+
+                         <h3 className="font-black text-fuchsia-900 mb-4 text-center border-t pt-6">Métodos Anticonceptivos e I.T.S.</h3>
+                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                             {/* Anticonceptivos */}
+                             <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                                 <div className="bg-slate-200 px-4 py-2 font-bold text-slate-800 text-sm">Tipos de Métodos</div>
+                                 <div className="p-4 space-y-3 text-sm">
+                                     <p><b>🛡️ Barrera:</b> Impiden físicamente que el esperma llegue. Condón (masc/fem), DIU de cobre. <br/><span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-1 rounded">Solo el condón protege de ETS.</span></p>
+                                     <p><b>💊 Hormonales:</b> Evitan la ovulación. Pastillas, parches, inyecciones, implantes.</p>
+                                     <p><b>✂️ Definitivos/Quirúrgicos:</b> Cortar o ligar conductos. Vasectomía (hombres), Salpingoclasia (mujeres).</p>
+                                     <p><b>📅 Naturales:</b> Ritmo, temperatura. Son muy poco seguros.</p>
+                                 </div>
+                             </div>
+
+                             {/* ETS */}
+                             <div className="bg-red-50 border border-red-200 rounded-xl overflow-hidden">
+                                 <div className="bg-red-200 px-4 py-2 font-bold text-red-800 text-sm">Infecciones de Transmisión Sexual (ITS)</div>
+                                 <div className="p-4 space-y-2 text-sm text-gray-700">
+                                     <p>🔴 <b>VIH (Virus):</b> Ataca y destruye el sistema inmunológico. Causa la enfermedad del SIDA.</p>
+                                     <p>🔴 <b>VPH (Virus del Papiloma):</b> Causa verrugas. Es la principal causa del cáncer cervicouterino.</p>
+                                     <p>🔴 <b>Sífilis (Bacteria):</b> Produce llagas indoloras, luego sarpullido. Si no se trata con antibióticos, daña el cerebro y corazón.</p>
+                                     <p>🔴 <b>Gonorrea (Bacteria):</b> Causa ardor al orinar y secreciones con pus.</p>
+                                 </div>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+                 {/* BLOQUE 6: GENÉTICA Y BIOTECNOLOGÍA */}
+                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                     <div className="bg-indigo-600 px-6 py-4">
+                         <h2 className="text-lg font-bold text-white">6. Genética y Biotecnología</h2>
+                     </div>
+                     <div className="p-4 md:p-8">
+                         
+                         <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl mb-6 flex flex-col md:flex-row gap-6 items-center">
+                             <div className="flex-1 text-sm text-gray-700 space-y-3">
+                                 <h3 className="font-black text-indigo-800 text-lg border-b pb-1">Genética Clásica (Gregor Mendel)</h3>
+                                 <p><b>Fenotipo:</b> Rasgos físicos <i>visibles</i> (ej. color de ojos, altura).</p>
+                                 <p><b>Genotipo:</b> Información genética <i>interna</i> oculta en el ADN.</p>
+                                 <p><b>Gen Dominante:</b> Característica que siempre se manifiesta si está presente (Mayúscula 'A').</p>
+                                 <p><b>Gen Recesivo:</b> Queda oculto. Solo se manifiesta si se hereda de <i>ambos</i> padres ('a').</p>
+                             </div>
+                             <div className="w-full md:w-1/3 bg-white p-4 rounded-lg shadow border border-indigo-100 text-center">
+                                <span className="text-4xl">🧬</span>
+                                <p className="text-xs text-gray-500 mt-2 font-bold">ADN: Ácido Desoxirribonucleico.<br/>Almacena las instrucciones de la vida.</p>
+                             </div>
+                         </div>
+
+                         <h3 className="font-black text-indigo-900 mb-4 border-b pb-2">Manipulación Genética (Transgénicos)</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="bg-emerald-50 p-5 rounded-xl border-l-4 border-emerald-500 shadow-sm">
+                                 <h4 className="font-black text-emerald-800 text-base mb-3 flex items-center"><span className="mr-2">✅</span> Beneficios</h4>
+                                 <ul className="text-xs text-gray-700 space-y-3">
+                                     <li>• Producción rápida de fármacos y vacunas.</li>
+                                     <li>• <b>Transgénicos:</b> Cultivos modificados para resistir plagas o sequías, combatiendo el hambre mundial.</li>
+                                     <li>• Oportunidad de "corregir" enfermedades hereditarias editando el ADN.</li>
+                                 </ul>
+                             </div>
+                             <div className="bg-rose-50 p-5 rounded-xl border-l-4 border-rose-500 shadow-sm">
+                                 <h4 className="font-black text-rose-800 text-base mb-3 flex items-center"><span className="mr-2">⚠️</span> Riesgos</h4>
+                                 <ul className="text-xs text-gray-700 space-y-3">
+                                     <li>• Las especies mutadas compiten con las naturales, <b>reduciendo y empobreciendo la biodiversidad</b>.</li>
+                                     <li>• Se desconocen los efectos a largo plazo en la salud humana por consumir transgénicos.</li>
+                                     <li>• Posible desequilibrio ecológico si se cruzan con especies silvestres.</li>
+                                 </ul>
+                             </div>
+                         </div>
+
+                     </div>
+                 </div>
+
+             </div>
+        );
+        const App = () => {
+            const [activeTab, setActiveTab] = useState("HISTORIA DE MÉXICO");
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <header className="bg-white shadow-sm sticky top-0 z-10">
+                        <div className="max-w-6xl mx-auto px-4 py-4">
+                            <h1 className="text-xl md:text-2xl font-black text-indigo-900 flex items-center gap-2">
+                                <span className="text-2xl">📚</span> PrepaExamen
+                                <span className="ml-2 text-xs md:text-sm font-bold text-white bg-indigo-500 px-3 py-1 rounded-full">Secundaria</span>
+                            </h1>
+                        </div>
+                        <div className="max-w-6xl mx-auto px-4 overflow-x-auto custom-scrollbar">
+                            <div className="flex space-x-2 pb-3">
+                                {SUBJECTS.map((subject) => (
+                                    <button
+                                        key={subject}
+                                        onClick={() => setActiveTab(subject)}
+                                        className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                                            activeTab === subject 
+                                                ? 'bg-indigo-600 text-white shadow-md transform scale-105' 
+                                                : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {subject}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 max-w-6xl mx-auto px-4 py-6 md:py-10 w-full">
+                        {activeTab === "FÍSICA" ? <FisicaView /> : 
+                         activeTab === "HISTORIA UNIVERSAL" ? <HistoriaUniversalView /> : 
+                         activeTab === "HISTORIA DE MÉXICO" ? <HistoriaMexicoView /> : 
+                         activeTab === "QUIMICA" ? <QuimicaView /> :
+                         activeTab === "MATEMÁTICAS" ? <MatematicasView /> :
+                         activeTab === "ESPAÑOL" ? <EspanolView /> :
+                         activeTab === "GEOGRAFÍA" ? <GeografiaView /> :
+                         activeTab === "BIOLOGÍA" ? <BiologiaView /> :
+                        (
+                            <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white rounded-2xl shadow-sm border border-dashed border-gray-300 p-6">
+                                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"><span className="text-4xl">🚧</span></div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">Sección en Construcción</h2>
+                                <p className="text-gray-500 max-w-md mb-8">Preparando el material de estudio para <b>{activeTab}</b>.</p>
+                                <button onClick={() => setActiveTab("HISTORIA DE MÉXICO")} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">Ir a Historia de México</button>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
